@@ -18,6 +18,22 @@ From a confirmed research idea + prepared assets → produce:
 
 Execute in order. After each step, update `docs/stage2_progress.md`.
 
+### Step 0: Model Verification
+
+Read `model_config.yaml` from the project root. For each model entry:
+
+**Local models** (`type: local`):
+1. Check if the model exists at the specified `path` (look for `config.json` or `*.safetensors`)
+2. If missing: invoke `auto-research-s2-asset-download` to download the model to the specified path
+3. After download, verify the path now contains model files
+
+**API models** (`type: api`):
+1. Invoke `auto-research-s2-model-call` to send a test request (e.g., a simple "Hello" prompt with max_tokens=5)
+2. If the request fails: report the error and ask the user to check the URL/API key
+3. Do NOT proceed with experiments until all API models respond successfully
+
+Only proceed to Step 1 after ALL models in the config are verified.
+
 ### 1. Verify Assets Ready
 
 Check that required assets exist:

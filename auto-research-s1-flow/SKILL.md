@@ -11,75 +11,74 @@ metadata:
 
 ## 1. Search Loop
 
-Iterate the following cycle (max **10 rounds**):
+Iterate the following cycle. **Termination**: round ≥ 5 OR new papers found in current round < 5.
+
+> **Skill invocation**: To invoke a sub-skill, read its `SKILL.md` file and follow the instructions within it. Skills are guidance documents, not executable commands.
 
 ### Step 1: Design Keywords
-Based on current gap understanding, generate 3–5 search keyword combinations.
+Generate 3–5 search keyword combinations based on **all prior context**:
 - Round 1: broad topic terms (e.g., "LLM jailbreak attack", "prompt injection defense")
-- Later rounds: refine based on gaps found (e.g., "transferable adversarial suffix multi-model")
+- Later rounds: derive from current GAP analysis and idea pool — target under-explored directions, avoid re-searching saturated areas (e.g., if GAP says "no cross-architecture skill transfer", search "transferable adversarial strategy multi-model")
 
 ### Step 2: Search
 For each keyword set, invoke `auto-research-s1-arxiv-search` to retrieve papers.
 Also search GitHub (`auto-research-s1-github-search`) for baseline repos when a relevant method is found.
+**Count new papers** (not previously seen in prior rounds).
 
-> **Skill invocation**: To invoke a sub-skill, read its `SKILL.md` file and follow the instructions within it. Skills are guidance documents, not executable commands.
+### Step 3: Cumulative Synthesis
+This is the core of each round. Update ALL THREE documents:
 
-### Step 3: Analyze & Reflect
-For highly relevant papers (method match + recent), invoke `auto-research-s1-paper-analysis` for deep analysis.
-Append structured entries to `docs/related_work.md`.
+1. **`docs/related_work.md`** — append new paper entries (structured: title, venue, method, key results, relevance)
+2. **`docs/topic_gap_idea.md` § Gap Analysis** — update:
+   - Which directions are now well-covered (with evidence: paper count, key works)
+   - Which gaps remain or newly emerged
+   - Contradictions or open questions across papers
+3. **`docs/topic_gap_idea.md` § Idea Pool** — update:
+   - For each existing idea: note overlap with newly found papers (mark `⚠️ overlap` if a paper already does this)
+   - Add new ideas inspired by this round's findings
+   - This prevents proposing ideas that existing work already covers
 
-### Step 4: Update Gap
-Update `docs/topic_gap_idea.md` with:
-- What has been explored (covered areas)
-- What remains unexplored (gaps)
-- Emerging patterns or contradictions across papers
+### Step 4: Plan Next Round
+Based on the updated GAP and idea pool:
+- Which gap directions need deeper search?
+- Which keyword angles are exhausted (skip next round)?
+- Any new method families discovered that need coverage?
 
-### Step 5: Refine Keywords
-Based on gaps, adjust keyword strategy for next round.
+### Step 5: Check Termination
+- If round ≥ 5 → **stop searching**
+- If new papers this round < 5 → **stop searching** (diminishing returns)
+- Otherwise → continue to next round
 
-## 2. Completion Assessment
-
-After each round, evaluate 4 criteria:
-
-| # | Criterion | Check |
-|---|-----------|-------|
-| 1 | **Gap stable** | Gap description unchanged for 2 consecutive rounds |
-| 2 | **Search saturated** | New rounds yield <2 new relevant papers |
-| 3 | **Routes covered** | All major method families in the topic are represented |
-| 4 | **Positioning writable** | Can articulate "existing work does X, we propose Y because Z" |
-
-**Pass condition**: 3/4 criteria met, OR max rounds (10) reached.
-
-Log assessment in `docs/stage1_progress.md`:
+Log in `docs/stage1_progress.md`:
 ```markdown
-## Round {N} Assessment
-- Gap stable: ✓/✗
-- Search saturated: ✓/✗
-- Routes covered: ✓/✗
-- Positioning writable: ✓/✗
-- Decision: continue / complete
+## Round {N}
+- Keywords: [list]
+- New papers found: {count}
+- GAP update: {1-line summary of what changed}
+- Idea pool: {added/removed/flagged overlap}
+- Decision: continue / terminate (reason)
 ```
 
-## 3. Positioning & Idea Proposal
+## 2. Positioning & Idea Finalization
 
-After search completes:
+After search terminates, finalize the idea pool built during the search loop:
 
 1. Write a positioning statement in `topic_gap_idea.md`:
    ```
    Existing work focuses on [X]. However, [gap]. We propose to [Y] by [key insight].
    ```
 
-2. Propose **3–5 research ideas**, each with:
+2. Review the idea pool — remove ideas flagged `⚠️ overlap`, then for remaining **3–5 ideas** finalize:
    - **Title**: one-line description
    - **Method sketch**: 2–3 sentences on approach
-   - **Novelty**: what's new vs. closest existing work
+   - **Novelty**: what's new vs. closest existing work (cite specific papers from related_work.md)
    - **Feasibility**: compute/data/timeline estimate (high/medium/low)
    - **Risk**: what could go wrong
    - **Score**: novelty(1-5) × feasibility(1-5)
 
 3. Rank ideas by score. Present to user as decision gate.
 
-## 4. Asset Preparation
+## 3. Asset Preparation
 
 After user confirms an idea, prepare `docs/assets.md` and `docs/baselines.md`:
 
@@ -107,19 +106,19 @@ Use `auto-research-s1-github-search` to find baseline repos.
 
 Execute downloads. Update status in assets.md/baselines.md.
 
-## 5. Progress Tracking
+## 4. Progress Tracking
 
 Maintain `docs/stage1_progress.md`:
 ```markdown
 # Stage 1 Progress
 - **Topic**: {topic}
-- **Rounds completed**: {N}/10
+- **Rounds completed**: {N}/5
 - **Papers analyzed**: {count}
-- **Phase**: search_loop | idea_proposal | asset_prep | gate_pending
+- **Phase**: search_loop | idea_finalization | asset_prep | gate_pending
 - **Last updated**: {date}
 ```
 
-## 6. Decision Gate
+## 5. Decision Gate
 
 Present to user:
 1. Summary of literature landscape (key method families, coverage)

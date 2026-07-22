@@ -41,6 +41,25 @@ export https_proxy=http://127.0.0.1:7890
 huggingface-cli download MODEL_ID --local-dir ./models/NAME
 ```
 
+### Downloading Models from model_config.yaml
+
+When `model_config.yaml` specifies a `type: local` model whose `path` does not exist:
+
+1. Determine the model source:
+   - If the model name matches a HuggingFace model ID (e.g., `Qwen/Qwen3-4B`), download via:
+     ```bash
+     huggingface-cli download {model_id} --local-dir {path} --resume-download
+     ```
+   - If the model is on ModelScope (check `modelscope.cn`), download via:
+     ```bash
+     modelscope download --model {namespace}/{name} --local_dir {path}
+     ```
+   - If unclear, search HuggingFace first (reference `auto-research-s1-huggingface-query`), then ModelScope
+
+2. Verify download: check that `{path}/config.json` exists and `{path}/` contains `*.safetensors` files
+
+3. If download fails (auth required, model gated), report to user with instructions
+
 ## Dataset Download
 
 ### HuggingFace (CLI)

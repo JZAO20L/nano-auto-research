@@ -11,24 +11,44 @@ metadata:
 
 All model endpoints are defined in `model_config.yaml` at project root.
 
-### Template
+### Config: model_config.yaml
 
+The model configuration is defined in `model_config.yaml` at the project root. Each model entry has:
+
+**Local models** (`type: local`):
 ```yaml
-local:
-  policy:
-    base_url: "http://localhost:8000/v1"
-    model: "Qwen/Qwen3-4B"
-    api_key: "EMPTY"
-  target:
-    base_url: "http://localhost:8001/v1"
-    model: "Qwen/Qwen3-4B"
-    api_key: "EMPTY"
-remote:
-  provider: "dashscope"
-  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
-  api_key: "sk-xxx"
-  model: "qwen3-max"
+- name: Qwen3-4B
+  type: local
+  path: /data/models/Qwen3-4B
+  description: "Backbone for training"
 ```
+- Call via vLLM: first deploy with `vllm serve {path}`, then use the resulting endpoint
+- Reference `auto-research-s2-vllm-deploy` for deployment details
+
+**API models** (`type: api`):
+```yaml
+- name: qwen-max
+  type: api
+  url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  api_key: sk-xxx
+  description: "Remote baseline"
+```
+- Call directly via OpenAI-compatible client with the provided `url` and `api_key`
+
+### Connectivity Test
+
+Before any experiment, test each API model:
+```python
+from openai import OpenAI
+client = OpenAI(base_url="{url}", api_key="{api_key}")
+resp = client.chat.completions.create(
+    model="{name}",
+    messages=[{"role": "user", "content": "Hello"}],
+    max_tokens=5
+)
+print(resp.choices[0].message.content)  # Should print a short response
+```
+If this fails, report the error to the user. Do NOT silently skip the model.
 
 ### If config missing
 
@@ -43,13 +63,14 @@ Do NOT hardcode keys or URLs in code.
 import yaml
 from pathlib import Path
 
-def load_model_config(role: str = "target", mode: str = "local") -> dict:
+def load_model_config(name: str) -> dict:
     cfg_path = Path("model_config.yaml")
     assert cfg_path.exists(), "model_config.yaml not found — ask user to create it"
     cfg = yaml.safe_load(cfg_path.read_text())
-    if mode == "local":
-        return cfg["local"][role]
-    return cfg["remote"]
+    for model in cfg["models"]:
+        if model["name"] == name:
+            return model
+    raise ValueError(f"Model '{name}' not found in model_config.yaml")
 ```
 
 ## Synchronous Call (OpenAI SDK)

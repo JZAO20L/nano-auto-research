@@ -16,14 +16,14 @@ Iterate the following cycle. **Termination**: round > 5 AND new papers found in 
 > **Skill invocation**: To invoke a sub-skill, read its `SKILL.md` file and follow the instructions within it. Skills are guidance documents, not executable commands.
 
 ### Step 1: Design Keywords
-Generate 3–5 search keyword combinations based on **all prior context**:
+Generate **3–5** search keyword combinations (max 5) based on **all prior context**:
 - Round 1: broad topic terms (e.g., "LLM jailbreak attack", "prompt injection defense")
 - Later rounds: derive from current GAP analysis and idea pool — target under-explored directions, avoid re-searching saturated areas (e.g., if GAP says "no cross-architecture skill transfer", search "transferable adversarial strategy multi-model")
 
 ### Step 2: Search
-For each keyword set, invoke `auto-research-s1-arxiv-search` to retrieve papers.
+For each keyword set, invoke `auto-research-s1-arxiv-search` with `max_results=20`.
 Also search GitHub (`auto-research-s1-github-search`) for baseline repos when a relevant method is found.
-**Count new papers** (not previously seen in prior rounds).
+**Count new papers** (not previously seen in prior rounds). From all retrieved papers, select **≤ 10** for deep analysis (criteria: method match + recent + high relevance); the rest are recorded as title/abstract only in `related_work.md`.
 
 ### Step 3: Cumulative Synthesis
 This is the core of each round. Update ALL THREE documents:

@@ -42,6 +42,17 @@ Extract the following from the paper:
 - **Authors**: {first author} et al.
 - **Venue**: {conference/journal}
 - **arXiv**: {id}
+- **Link**: https://arxiv.org/abs/{id}
+
+**BibTeX**:
+```bibtex
+@article{firstauthor{year}{keyword},
+  title={Paper Title},
+  author={Last, First and Last2, First2},
+  journal={arXiv preprint arXiv:{id}},
+  year={Year}
+}
+```
 
 **Problem**: What specific problem does this paper address? (1-2 sentences)
 

@@ -28,7 +28,7 @@ Also search GitHub (`auto-research-s1-github-search`) for baseline repos when a 
 ### Step 3: Cumulative Synthesis
 This is the core of each round. Update ALL THREE documents:
 
-1. **`docs/related_work.md`** — append new paper entries (structured: title, venue, method, key results, relevance)
+1. **`docs/related_work.md`** — append new paper entries (structured: title, venue, method, key results, relevance). Each entry must include the **arxiv link** and a **BibTeX citation** (see `auto-research-s1-paper-analysis` template).
 2. **`docs/topic_gap_idea.md` § Gap Analysis** — update:
    - Which directions are now well-covered (with evidence: paper count, key works)
    - Which gaps remain or newly emerged

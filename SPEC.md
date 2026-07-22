@@ -498,7 +498,7 @@ nano-auto-research/
 projects/<project_name>/             ← 每个研究项目独立目录
 ├── SPEC.md                          ← 用户需求文档（用户维护）
 ├── README.md                        ← 项目概况（agent 维护）
-├── model_config.yaml                ← 模型配置（本地模型: name/path/desc; API模型: name/url/apikey/desc，用户填写）
+├── project_config.yaml           ← 项目配置（topic/method_sketch/target_venue/constraints/models，用户填写，agent 只读）
 ├── docs/                            ← 项目文档（agent 维护，S1 产物）
 │   ├── project_status.md            ← 全局状态（auto-research 维护）
 │   ├── stage1_progress.md
@@ -531,7 +531,7 @@ projects/<project_name>/             ← 每个研究项目独立目录
 |---|---|---|---|
 | `SPEC.md` | 用户 | 需求、约束、目标 | 全程 |
 | `README.md` | agent | 项目概况、当前状态、快速上手 | 全程 |
-| `model_config.yaml` | 用户 | 本地模型(name/path/desc) + API模型(name/url/apikey/desc) | S2 前填写 |
+| `project_config.yaml` | 用户 | 项目配置：topic, method_sketch, target_venue, constraints, models（本地: name/type/path/desc; API: name/type/url/api_key/max_concurrency/rpm/desc） | 项目启动前填写 |
 | `docs/` | agent | 调研文档、进度、结果 | S1 产物为主 |
 | `data/` | agent | 数据集下载 & 预处理 | S1 末下载 |
 | `models/` | agent | 模型权重下载 | S1 末下载 |

@@ -14,7 +14,50 @@ You are the top-level controller of a 3-stage research automation pipeline:
 
 ## 1. Project Initialization
 
-On first invocation, create the project directory structure:
+### 1.1 Check for project_config.yaml
+
+On first invocation, check if `project_config.yaml` exists in the project root.
+
+**If NOT present**: present the user with the template below and ask them to fill it in. Do NOT proceed until the config file exists.
+
+```yaml
+# project_config.yaml — 用户填写，agent 只读
+topic: "Research topic description"
+method_sketch: "Brief description of the planned approach (optional but recommended)"
+target_venue: "AAAI 2027"
+constraints:
+  compute: "8x A100 80GB"
+  timeline: "3 months"
+
+models:
+  # Local models: agent checks path, downloads if missing
+  - name: Qwen3-4B
+    type: local
+    path: /data/models/Qwen3-4B
+    description: "Backbone for GRPO training"
+
+  # API models: agent tests connectivity, respects rate limits
+  - name: qwen-max
+    type: api
+    url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    api_key: sk-xxx
+    max_concurrency: 10
+    rpm: 60
+    description: "Remote baseline"
+```
+
+**If present**: validate required fields:
+1. `topic` must be non-empty
+2. `models` must have at least 1 entry
+3. Each model must have `name`, `type`, and `description`
+4. Local models (`type: local`) must have `path`
+5. API models (`type: api`) must have `url`, `api_key`, `max_concurrency`, `rpm`
+
+If validation fails, report the specific missing/invalid fields and ask the user to fix `project_config.yaml`. Do NOT proceed until validation passes.
+
+### 1.2 Create Project Directory Structure
+
+After validation, create the project directory structure:
 
 ```bash
 mkdir -p projects/{name}/{docs,data,models,baselines,src,scripts,exp,output,paper}
@@ -22,6 +65,7 @@ mkdir -p projects/{name}/{docs,data,models,baselines,src,scripts,exp,output,pape
 
 ```
 PROJECT_ROOT/
+├── project_config.yaml          # user-provided config (agent read-only)
 ├── docs/
 │   ├── project_status.md        # pipeline state (you maintain this)
 │   ├── stage1_progress.md       # S1 search progress
@@ -41,7 +85,8 @@ Initialize `docs/project_status.md`:
 
 ```markdown
 # Project Status
-- **Topic**: {user_topic}
+- **Topic**: {topic from project_config.yaml}
+- **Target Venue**: {target_venue from project_config.yaml}
 - **Current Stage**: S1
 - **Stage Phase**: init
 - **Last Updated**: {date}

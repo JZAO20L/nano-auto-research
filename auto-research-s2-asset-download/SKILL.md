@@ -41,9 +41,9 @@ export https_proxy=http://127.0.0.1:7890
 huggingface-cli download MODEL_ID --local-dir ./models/NAME
 ```
 
-### Downloading Models from model_config.yaml
+### Downloading Models from project_config.yaml
 
-When `model_config.yaml` specifies a `type: local` model whose `path` does not exist:
+When `project_config.yaml` specifies a `type: local` model whose `path` does not exist:
 
 1. Determine the model source:
    - If the model name matches a HuggingFace model ID (e.g., `Qwen/Qwen3-4B`), download via:

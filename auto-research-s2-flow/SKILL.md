@@ -20,7 +20,7 @@ Execute in order. After each step, update `docs/stage2_progress.md`.
 
 ### Step 0: Model Verification
 
-Read `model_config.yaml` from the project root. For each model entry:
+Read `project_config.yaml` from the project root. For each model entry in the `models:` list:
 
 **Local models** (`type: local`):
 1. Check if the model exists at the specified `path` (look for `config.json` or `*.safetensors`)
@@ -40,7 +40,7 @@ Check that required assets exist:
 - `data/` — datasets populated and loadable
 - `models/` — model weights downloaded (or remote API configured)
 - `baselines/` — baseline repos cloned with dependencies installable
-- `model_config.yaml` — user-provided URLs/keys present
+- `project_config.yaml` — user-provided URLs/keys present
 
 If missing → invoke **auto-research-s2-asset-download**.
 

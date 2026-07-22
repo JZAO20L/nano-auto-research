@@ -11,7 +11,7 @@ metadata:
 
 ## 1. Search Loop
 
-Iterate the following cycle. **Termination**: round ≥ 5 OR new papers found in current round < 5.
+Iterate the following cycle. **Termination**: round > 5 AND new papers found in current round ≤ 5.
 
 > **Skill invocation**: To invoke a sub-skill, read its `SKILL.md` file and follow the instructions within it. Skills are guidance documents, not executable commands.
 
@@ -45,8 +45,7 @@ Based on the updated GAP and idea pool:
 - Any new method families discovered that need coverage?
 
 ### Step 5: Check Termination
-- If round ≥ 5 → **stop searching**
-- If new papers this round < 5 → **stop searching** (diminishing returns)
+- If round > 5 AND new papers this round ≤ 5 → **stop searching** (minimum rounds done + diminishing returns)
 - Otherwise → continue to next round
 
 Log in `docs/stage1_progress.md`:

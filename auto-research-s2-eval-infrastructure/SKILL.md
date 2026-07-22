@@ -100,7 +100,7 @@ async def judge_with_model(responses: list[str], prompts: list[str], cfg: dict) 
 import argparse, json, asyncio
 from pathlib import Path
 from src.eval.data_loader import load_data
-from src.eval.metrics import compute_asr
+from src.eval.metrics import compute_asr, judge_refusal
 from src.model_call import batch_call, load_model_config, parse_response
 
 def main():

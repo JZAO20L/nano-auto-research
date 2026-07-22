@@ -16,7 +16,7 @@ metadata:
 
 ## Output
 
-`paper/paper_draft.md` — complete manuscript in markdown (target: 8 pages main content, AAAI/ACL format)
+`paper/paper_draft.md` — complete manuscript in markdown. Page limits: AAAI = 7 pages content + 1 page references; ACL = 8 pages content + unlimited references. Confirm the target venue before drafting.
 
 ## Section Order and Content
 
@@ -118,7 +118,7 @@ We presented [METHOD], which [one-sentence summary]. Experiments demonstrate
 
 - Academic English, formal register
 - Present tense for method description, past tense for experiments
-- Citation format: [Author et al., Year]
+- Citation format: numbered `[1]`, `[2]` (AAAI/ACL default). Use `\cite{key}` with BibTeX.
 - Avoid: "very", "really", "a lot of", "it is worth noting that"
 - Prefer active voice: "We propose..." not "It is proposed..."
 - Every claim needs evidence: citation or experimental result

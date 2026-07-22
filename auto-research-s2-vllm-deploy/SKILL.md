@@ -1,6 +1,8 @@
 ---
 name: auto-research-s2-vllm-deploy
 description: Deploy LLMs and VLMs as OpenAI-compatible API servers using vLLM. Covers basic deployment, LoRA adapter serving, text and multimodal inference calls, and performance tuning. Use when setting up model inference servers for experiments, evaluation, or reward computation.
+metadata:
+  version: "0.1"
 ---
 
 # vLLM Model Deployment

@@ -22,6 +22,8 @@ Based on current gap understanding, generate 3–5 search keyword combinations.
 For each keyword set, invoke `auto-research-s1-arxiv-search` to retrieve papers.
 Also search GitHub (`auto-research-s1-github-search`) for baseline repos when a relevant method is found.
 
+> **Skill invocation**: To invoke a sub-skill, read its `SKILL.md` file and follow the instructions within it. Skills are guidance documents, not executable commands.
+
 ### Step 3: Analyze & Reflect
 For highly relevant papers (method match + recent), invoke `auto-research-s1-paper-analysis` for deep analysis.
 Append structured entries to `docs/related_work.md`.

@@ -1,6 +1,8 @@
 ---
 name: auto-research-s2-model-training
 description: Guide for training LLMs with TRL (GRPO, SFT, DPO) including custom reward functions, vLLM-accelerated generation, LoRA/PEFT, and multi-GPU distributed training. Use when setting up RL training experiments, designing reward functions, or configuring training infrastructure.
+metadata:
+  version: "0.1"
 ---
 
 # Model Training with TRL
@@ -9,14 +11,14 @@ description: Guide for training LLMs with TRL (GRPO, SFT, DPO) including custom 
 
 Use **TRL** (HuggingFace) for all training that involves custom reward logic. TRL's reward function is a plain Python callable — ideal for research-grade reward design (adaptive weighting, multi-dimensional judge, variance-based scheduling).
 
-Reference docs: `docs/docs/trl/` (grpo_trainer.md, vllm_integration.md, distributing_training.md, peft_integration.md)
+Reference docs: TRL documentation is available at https://huggingface.co/docs/trl or via `pip show trl` for the installed version.
 
 ## Version Requirements
 
 | Package | Version | Notes |
 |---|---|---|
 | trl | >= 0.19.0 | GRPOTrainer, DistillationTrainer |
-| transformers | >= 4.50.0 | SwanLab native integration, latest model support |
+| transformers | >= 4.50.0 (>= 5.2.0 for `environment_factory`) | SwanLab native integration, latest model support |
 | accelerate | >= 1.0.0 | Multi-GPU distributed training |
 | peft | >= 0.13.0 | LoRA/QLoRA support |
 | vllm | >= 0.17.0, <= 0.25.1 | TRL vLLM integration (server/colocate mode) |
@@ -302,7 +304,7 @@ For compressing a teacher model into a smaller student. Experimental in TRL.
 
 ```python
 from datasets import load_dataset
-from trl.experimental.distillation import DistillationConfig, DistillationTrainer
+from trl.experimental.distillation import DistillationConfig, DistillationTrainer  # (experimental, availability varies by TRL version; requires TRL >= 0.20)
 
 dataset = load_dataset("openai/gsm8k", "main", split="train")
 dataset = dataset.map(
@@ -358,7 +360,7 @@ trainer = DistillationTrainer(
 Token-level variant of Group Sequence Policy Optimization. Use when you have per-token advantages.
 
 ```python
-from trl.experimental.gspo_token import GRPOTrainer
+from trl.experimental.gspo_token import GRPOTrainer  # (experimental, availability varies by TRL version; requires TRL >= 0.20)
 from trl import GRPOConfig
 
 training_args = GRPOConfig(
@@ -470,7 +472,7 @@ pip install swanlab
 swanlab login  # paste API key from https://swanlab.cn/settings
 ```
 
-API Key: `lIrr4ZEyrTCWsWGQE9szs`
+API Key: `YOUR_SWANLAB_API_KEY` (Get your API key from https://swanlab.cn/settings)
 
 ---
 
@@ -519,7 +521,7 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 trl vllm-serve \
     --model Qwen/Qwen2.5-VL-3B-Instruct \
     --tensor-parallel-size 1 \
     --port 8000 \
-    --enforce_eager \
+    --enforce-eager \
     --vllm_model_impl transformers
 ```
 

@@ -12,12 +12,12 @@ Search and verify models/datasets on HuggingFace Hub.
 ## 1. Model Search
 
 ```bash
-curl -s "https://huggingface.co/api/models?search=KEYWORD&limit=10&sort=downloads"
+curl -s --max-time 20 "https://huggingface.co/api/models?search=KEYWORD&limit=10&sort=downloads"
 ```
 
 Example:
 ```bash
-curl -s "https://huggingface.co/api/models?search=Qwen2.5-7B&limit=10&sort=downloads"
+curl -s --max-time 20 "https://huggingface.co/api/models?search=Qwen2.5-7B&limit=10&sort=downloads"
 ```
 
 Response is a JSON list. Each item:
@@ -30,12 +30,12 @@ Response is a JSON list. Each item:
 ## 2. Dataset Search
 
 ```bash
-curl -s "https://huggingface.co/api/datasets?search=KEYWORD&limit=10"
+curl -s --max-time 20 "https://huggingface.co/api/datasets?search=KEYWORD&limit=10"
 ```
 
 Example:
 ```bash
-curl -s "https://huggingface.co/api/datasets?search=AdvBench&limit=10"
+curl -s --max-time 20 "https://huggingface.co/api/datasets?search=AdvBench&limit=10"
 ```
 
 Response items: `id`, `downloads`, `likes`, `tags`.
@@ -43,12 +43,12 @@ Response items: `id`, `downloads`, `likes`, `tags`.
 ## 3. Exact Model Info
 
 ```bash
-curl -s "https://huggingface.co/api/models/MODEL_ID"
+curl -s --max-time 20 "https://huggingface.co/api/models/MODEL_ID"
 ```
 
 Example:
 ```bash
-curl -s "https://huggingface.co/api/models/Qwen/Qwen2.5-7B-Instruct"
+curl -s --max-time 20 "https://huggingface.co/api/models/Qwen/Qwen2.5-7B-Instruct"
 ```
 
 Returns detailed info:
@@ -62,12 +62,12 @@ Returns detailed info:
 ## 4. Paper Search (HF Papers)
 
 ```bash
-curl -s "https://huggingface.co/api/papers?search=KEYWORD"
+curl -s --max-time 20 "https://huggingface.co/api/papers?search=KEYWORD"
 ```
 
 Example:
 ```bash
-curl -s "https://huggingface.co/api/papers?search=jailbreak+LLM"
+curl -s --max-time 20 "https://huggingface.co/api/papers?search=jailbreak+LLM"
 ```
 
 Useful for finding papers that have associated model/code repos on HuggingFace.

@@ -20,7 +20,7 @@ Execute in order. Update `docs/stage3_progress.md` after each step.
 
 ### Step 1: Snapshot Frozen Idea
 
-Copy the current frozen idea to `docs/topic_gap_idea_frozen.md` if not already present. This is the single source of truth for the paper's positioning.
+Copy `docs/topic_gap_idea.md` (Stage 1 output) to `docs/topic_gap_idea_frozen.md` if not already present. This is the single source of truth for the paper's positioning.
 
 ### Step 2: Draw Fig.1 — Problem Illustration
 
@@ -61,13 +61,10 @@ Invoke skills: `auto-research-s3-paper-review` → `auto-research-s3-paper-revis
 - Stop condition: no major issues remain (score ≥ 7/10)
 - Each round: review → revise → re-review
 
-```
-for round in 1..3:
-    review = run(auto-research-s3-paper-review)
-    if no major issues in review:
-        break
-    run(auto-research-s3-paper-revision)
-```
+For each round (up to 3):
+1. Invoke the `auto-research-s3-paper-review` skill (read its SKILL.md and follow the instructions).
+2. If no major issues remain in the review, stop the loop.
+3. Otherwise, invoke the `auto-research-s3-paper-revision` skill (read its SKILL.md and follow the instructions).
 
 ## Rollback Protocol
 

@@ -12,12 +12,12 @@ Verify model/dataset availability on ModelScope and prepare download commands.
 ## 1. Exact Model Lookup
 
 ```bash
-curl -s "https://modelscope.cn/api/v1/models/NAMESPACE/MODEL_NAME"
+curl -s --max-time 20 "https://modelscope.cn/api/v1/models/NAMESPACE/MODEL_NAME"
 ```
 
 Example:
 ```bash
-curl -s "https://modelscope.cn/api/v1/models/Qwen/Qwen2.5-7B-Instruct"
+curl -s --max-time 20 "https://modelscope.cn/api/v1/models/Qwen/Qwen2.5-7B-Instruct"
 ```
 
 Check response:
@@ -31,12 +31,12 @@ If `Code` != 200, the model does not exist under that namespace/name.
 ## 2. Exact Dataset Lookup
 
 ```bash
-curl -s "https://modelscope.cn/api/v1/datasets/NAMESPACE/DATASET_NAME"
+curl -s --max-time 20 "https://modelscope.cn/api/v1/datasets/NAMESPACE/DATASET_NAME"
 ```
 
 Example:
 ```bash
-curl -s "https://modelscope.cn/api/v1/datasets/modelscope/AdvBench"
+curl -s --max-time 20 "https://modelscope.cn/api/v1/datasets/modelscope/AdvBench"
 ```
 
 Same response structure: check `Code` == 200 for existence.
@@ -46,10 +46,12 @@ Same response structure: check `Code` == 200 for existence.
 **ModelScope's search API is not reliable via curl.** Do not attempt:
 ```bash
 # UNRELIABLE — do not use
-curl -s "https://modelscope.cn/api/v1/models?Query=keyword"
+curl -s --max-time 20 "https://modelscope.cn/api/v1/models?Query=keyword"
 ```
 
 **Strategy**: Search on HuggingFace first (`auto-research-s1-huggingface-query`), then verify the same model exists on ModelScope using exact lookup with the expected namespace/name.
+
+If HuggingFace is unavailable or the model is not found there, search ModelScope directly via the web UI or CLI: `modelscope list --model_name KEYWORD`.
 
 Common namespace mappings:
 - HuggingFace `Qwen/Qwen2.5-7B` → ModelScope `Qwen/Qwen2.5-7B`

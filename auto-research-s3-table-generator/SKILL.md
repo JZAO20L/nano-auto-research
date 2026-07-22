@@ -14,6 +14,12 @@ metadata:
 
 ## LaTeX Table Template — Main Results
 
+**Required LaTeX packages**: `booktabs` (for `\toprule`, `\midrule`, `\bottomrule`), `multirow` (if using multi-row headers). Add to preamble:
+```latex
+\usepackage{booktabs}
+\usepackage{multirow}
+```
+
 ```latex
 \begin{table}[t]
 \centering

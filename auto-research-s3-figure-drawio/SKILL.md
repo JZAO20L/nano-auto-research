@@ -79,9 +79,24 @@ metadata:
       edge="1" source="2" target="4" parent="1">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
+    <!-- Target node for edge above -->
+    <mxCell id="4" value="Skill Selection"
+      style="rounded=1;whiteSpace=wrap;fillColor=#D6E4F0;fontColor=#000000;strokeColor=#2F5496;"
+      vertex="1" parent="1">
+      <mxGeometry x="320" y="100" width="140" height="50" as="geometry"/>
+    </mxCell>
   </root>
 </mxGraphModel>
 ```
+
+### Converting to PDF
+
+If drawio CLI is available:
+```bash
+drawio --export --format pdf --output paper/figures/fig1_problem.pdf paper/figures/fig1_problem.drawio
+```
+
+If drawio CLI is not installed, generate the XML file and note: "Manual export required: open the .drawio file in draw.io desktop or web app, then File → Export as → PDF."
 
 ## Alternative: Structured Text Description
 

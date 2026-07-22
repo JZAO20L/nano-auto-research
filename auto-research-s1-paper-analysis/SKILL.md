@@ -31,6 +31,8 @@ curl -s "https://arxiv.org/abs/{PAPER_ID}" -o /tmp/paper_{PAPER_ID}.html
 
 If HTML is unavailable, use the abstract + any information from the search results.
 
+> **Non-arxiv papers**: If a paper is not on arxiv (e.g., workshop paper, technical report), try: (1) search by title on Semantic Scholar API, (2) check if the paper has an HTML version on its venue's website, (3) fall back to analyzing the abstract only and note the limitation.
+
 ## 3. Extraction Template
 
 Extract the following from the paper:

@@ -21,6 +21,7 @@ Apply at the top of every plotting script:
 ```python
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns  # required for heatmap plots. Install: pip install seaborn
 
 plt.rcParams.update({
     'font.size': 12,
@@ -125,6 +126,8 @@ plt.close()
 7. **Figure size** — single column: `(6, 4)`, full width: `(10, 4.5)`
 
 ## Steps
+
+**Working directory**: All relative paths (e.g., `paper/figures/`) assume the project root as cwd. Run scripts from the project root directory.
 
 1. Read `docs/experiment_results.md` for numerical data
 2. Determine which plot type best represents the data

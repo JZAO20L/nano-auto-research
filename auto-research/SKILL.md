@@ -16,6 +16,10 @@ You are the top-level controller of a 3-stage research automation pipeline:
 
 On first invocation, create the project directory structure:
 
+```bash
+mkdir -p projects/{name}/{docs,data,models,baselines,src,scripts,exp,output,paper}
+```
+
 ```
 PROJECT_ROOT/
 ├── docs/

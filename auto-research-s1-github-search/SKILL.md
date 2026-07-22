@@ -39,7 +39,7 @@ From each result item, extract:
 ## 3. Evaluation Criteria
 
 A repo is **usable** if it meets ALL:
-- Stars > 50
+- Stars > 50 (relax to > 10 for niche research areas where few implementations exist)
 - Updated within the last 1 year
 - Has a README with usage instructions
 - Contains training/evaluation scripts (not just a notebook demo)
@@ -79,12 +79,13 @@ Space requests with `sleep 6` between searches if unauthenticated.
 
 If the API returns 403 (rate limited) or fails:
 
+1. Wait 60 seconds and retry (rate limit resets per-minute for search).
+2. Try the GitHub API search endpoint directly:
 ```bash
-# Search via HTML page (parse manually)
-curl -s "https://github.com/search?q=KEYWORD&type=repositories&s=stars&o=desc"
+curl -s --max-time 20 "https://api.github.com/search/repositories?q=KEYWORD&sort=stars&per_page=10"
 ```
 
-Or use web_fetch on the GitHub search URL to get results.
+**Note**: `web_fetch` is unreliable in this environment (safety classifier blocks, proxy timeouts). Always prefer the GitHub API via `curl`.
 
 ## 8. Batch Search Strategy
 

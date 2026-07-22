@@ -54,6 +54,7 @@ Run experiments sequentially to avoid GPU contention:
 
 ```bash
 # Run all experiments in order
+set -o pipefail
 for exp in exp/*.sh; do
   echo "=== Running: $exp ==="
   bash "$exp" 2>&1 | tee "output/$(basename $exp .sh)/log.txt"

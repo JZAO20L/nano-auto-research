@@ -57,7 +57,7 @@ For each baseline method:
 - Create `exp/baseline_NAME.sh`
 - Verify it reproduces reported numbers
 
-Reference: **auto-research-s2-model-call** for API patterns, **auto-research-s2-model-training** for training loops.
+Reference: **auto-research-s2-model-call** for API patterns, **auto-research-s2-model-training** for training loops. For local model serving, reference **auto-research-s2-vllm-deploy** to set up vLLM servers before calling models.
 
 ### 6. Implement Core Method
 

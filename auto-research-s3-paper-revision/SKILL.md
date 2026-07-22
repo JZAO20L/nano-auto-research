@@ -29,6 +29,8 @@ Read the latest review round. Categorize and prioritize:
 4. **Questions** — answer in rebuttal, add clarification to paper
 5. **Suggestions** — address if straightforward
 
+> **Scope creep guard**: If a "minor" revision cascades into rewriting 3+ sections or changing notation throughout the paper, stop and flag for human review rather than proceeding autonomously.
+
 ### Step 2: For Each Comment, Execute
 
 For every issue W/M/Q:

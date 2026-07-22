@@ -35,6 +35,7 @@ snapshot_download(repo_id="Qwen/Qwen3-4B", local_dir="./models/qwen3-4b")
 ### Proxy (if direct download fails)
 
 ```bash
+# (replace with your local proxy address, or remove if not using a proxy)
 export http_proxy=http://127.0.0.1:7890
 export https_proxy=http://127.0.0.1:7890
 huggingface-cli download MODEL_ID --local-dir ./models/NAME

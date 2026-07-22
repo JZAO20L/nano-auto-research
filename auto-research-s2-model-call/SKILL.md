@@ -147,12 +147,12 @@ When unsure, start at 16 and increase until rate-limit errors appear, then back 
 
 ```bash
 # GPU 0: policy model
-CUDA_VISIBLE_DEVICES=0 python -m vllm.entrypoints.openai.api_server \
-  --model ./models/qwen3-4b --port 8000 --tensor-parallel-size 1 &
+CUDA_VISIBLE_DEVICES=0 vllm serve ./models/qwen3-4b --port 8000 --tensor-parallel-size 1 &
 
 # GPU 1: target model
-CUDA_VISIBLE_DEVICES=1 python -m vllm.entrypoints.openai.api_server \
-  --model ./models/qwen3-4b --port 8001 --tensor-parallel-size 1 &
+CUDA_VISIBLE_DEVICES=1 vllm serve ./models/qwen3-4b --port 8001 --tensor-parallel-size 1 &
 ```
+
+(legacy: `python -m vllm.entrypoints.openai.api_server`)
 
 Wait for server ready: `curl http://localhost:8000/v1/models`

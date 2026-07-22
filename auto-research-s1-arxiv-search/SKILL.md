@@ -1,8 +1,8 @@
 ---
-name: arxiv-search
+name: auto-research-s1-arxiv-search
 description: Search and retrieve paper metadata from arxiv via curl API access
-source: auto-skill
-extracted_at: '2026-07-21'
+metadata:
+  version: "0.1"
 ---
 
 ## When to use
@@ -123,9 +123,13 @@ parser = TextExtractor()
 parser.feed(html)
 text = ' '.join(parser.text)
 text = re.sub(r'\s+', ' ', text)
-print(text[:5000])  # adjust slice as needed
+with open(f'/tmp/paper_{paper_id}.txt', 'w') as f:
+    f.write(text)
+print(f\"Saved {len(text)} chars to /tmp/paper_{paper_id}.txt\")
 "
 ```
+
+Read the file in chunks if needed for analysis.
 
 ### URL patterns
 

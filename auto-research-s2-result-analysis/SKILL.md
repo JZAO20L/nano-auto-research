@@ -80,9 +80,11 @@ For each metric, compute:
 
 ```python
 def compute_delta(ours: float, baseline: float) -> dict:
+    if baseline == 0:
+        return {"absolute": ours - baseline, "relative": "N/A"}  # undefined when baseline is 0
     return {
         "absolute": ours - baseline,
-        "relative": (ours - baseline) / baseline * 100 if baseline > 0 else float("inf")
+        "relative": (ours - baseline) / baseline * 100
     }
 ```
 

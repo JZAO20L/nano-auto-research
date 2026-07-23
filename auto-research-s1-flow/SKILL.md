@@ -187,10 +187,14 @@ Datasets are split into two categories with **strict usage boundaries**:
 2. **Download & Analyze**: 同 Phase A 检查项 + 额外检查：
    - 训练管线格式兼容（SFT 需 instruction-response pairs，GRPO 需 prompt-only 等）
    - 单数据集规模 ≥ 500
-3. **Relevance check**: 与已选 benchmark 对比——
-   - 领域是否匹配？（如 benchmark 是 jailbreak 评测，训练数据应含安全相关语料）
-   - 是否存在数据泄露风险？（训练集与测试集不能有样本级重叠）
-   - ❌ 不相关或有泄露风险 → 继续搜索
+3. **Relevance check**（必须通过，否则 ❌ 继续搜索）:
+   - **任务级对齐**: 训练数据的任务类型必须与 benchmark 高度一致。例如：
+     - benchmark 测 jailbreak 攻击 → 训练数据须含攻击 prompt 生成/改写任务，不能只是通用安全问答
+     - benchmark 测代码生成 → 训练数据须含 code instruction-response pairs，不能只是自然语言对话
+   - **领域匹配**: 主题/领域与 benchmark 一致（如安全、医疗、法律）
+   - **无数据泄露**: 训练集与测试集不能有样本级重叠
+   - 判定标准：随机抽 10 条训练样本，≥ 7 条的任务形式与 benchmark 评测的任务形式可直接对应
+   - ❌ 不满足任务级对齐 → 不可用，继续搜索
 4. **Diversity check**: 已收集的训练数据是否来自 ≥ 2 个不同来源？分布是否有差异？（如一个偏正式指令、一个偏口语化）
 5. **Terminate**: 总样本量 ≥ 2000 AND 来源 ≥ 2 AND 全部通过相关性检查。若搜索耗尽仍未满足，报告用户讨论（可能需要自建或调整方法）。
 

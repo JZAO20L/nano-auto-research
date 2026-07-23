@@ -104,12 +104,29 @@ After search terminates, finalize the idea pool built during the search loop:
    ```
 
 2. Review the idea pool — remove ideas flagged `⚠️ overlap`, then for remaining **3–5 ideas** finalize:
-   - **Title**: one-line description
-   - **Method sketch**: 2–3 sentences on approach
-   - **Novelty**: what's new vs. closest existing work (cite specific papers from related_work.md)
-   - **Feasibility**: compute/data/timeline estimate (high/medium/low)
-   - **Risk**: what could go wrong
-   - **Score**: novelty(1-5) × feasibility(1-5)
+
+```markdown
+### Idea: {title}
+
+**Claim**: 一句话核心主张（"X 能提升 Y 因为 Z"）
+**Causal link**: 为什么 Z 能导致 Y？（机制假设，不是相关性）
+**Closest work**: 最接近的 1-2 篇论文 + 关键区别
+
+**Method Design**:
+- **Overview**: 方法整体流程（输入 → 模块A → 模块B → ... → 输出）
+- **Modules**:
+  | 模块 | 功能 | 实现方式 | 可调设计 |
+  |------|------|---------|---------|
+  | e.g., Skill Retriever | 从库中检索相关 skill | BM25 词法匹配 | 匹配算法（BM25/embedding）、top-k |
+  | e.g., Prompt Composer | 将 skill 注入 prompt | 模板拼接 | 注入位置（system/user）、拼接顺序 |
+- **Training** (if applicable): 训练目标、数据格式、损失函数
+- **Inference**: 推理流程、调用次数、预期开销
+
+**Evidence needed**: 需要什么实验来验证 claim？（对比实验/消融/分析）
+**Feasibility**: 计算/数据/时间评估（high/medium/low）
+**Risk**: 最可能失败的原因 + 备选方案
+**Score**: novelty(1-5) × feasibility(1-5)
+```
 
 3. Rank ideas by score. Present to user as decision gate.
 

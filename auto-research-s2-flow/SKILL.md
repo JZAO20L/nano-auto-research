@@ -116,6 +116,12 @@ Verify ALL before starting. If any fails → report to user, do not proceed.
 
 **只进行对比实验**（core method vs baselines），不做消融。
 
+**探索递进顺序**（每轮诊断时参照定位问题层级）：
+1. **Pipeline 验证**: 方法能跑通，产出非随机结果
+2. **核心组件验证**: 关键创新点单独验证有效（排除其他因素）
+3. **超参数调优**: 在核心组件有效的基础上调参
+4. **规模化**: 从小样本扩展到全量数据
+
 ```
 exp_iter = 0
 consecutive_fail = 0

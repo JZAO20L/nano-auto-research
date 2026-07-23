@@ -20,7 +20,7 @@ metadata:
 | `docs/baselines.md` | Baseline 方法 | 表格：方法/论文/repo/stars/复现难度/状态 |
 | `docs/stage1_progress.md` | 搜索日志 | 逐轮记录（关键词/新论文数/GAP 变化/idea 变动/终止决策）+ 全局状态 |
 
-**Exit condition**: 6 个文件全部存在且内容完整，≥ 3 个 benchmark 通过可用性检查，用户已在决策门选定 idea。
+**Exit condition**: 6 个文件全部存在且内容完整，≥ 3 benchmark + ≥ 1 训练数据集通过可用性检查，用户已在决策门选定 idea。
 
 ```mermaid
 flowchart TD
@@ -131,34 +131,42 @@ After user confirms an idea, **must** complete all three categories before proce
 | Llama-3-8B | search (HF) | meta-llama/Llama-3-8B | Cross-family target | ⬜ pending download |
 ```
 
-### 3.2 Datasets & Benchmarks (Iterative)
+### 3.2 Datasets (Iterative)
 
-Search, download, and **analyze** evaluation datasets. Loop until **≥ 3 benchmarks** pass usability check.
+Datasets are split into two categories with **strict usage boundaries**:
 
-**Loop**:
-1. **Search**: Identify candidate benchmarks from the idea's method sketch and related work (what datasets did comparable papers use?). Search via `auto-research-s1-huggingface-query` and `auto-research-s1-modelscope-query`.
+| 类别 | 用途 | 约束 |
+|------|------|------|
+| **Benchmark**（测试集） | 仅用于评估/测试，**禁止参与训练** | ≥ 3 个，需通过可用性检查 |
+| **Training data**（训练数据） | 用于学习/微调/数据增强/RL 训练等 | ≥ 1 个，需满足训练管线格式 |
+
+**Loop** (applies to both categories):
+1. **Search**: Identify candidates from the idea's method sketch and related work. Search via `auto-research-s1-huggingface-query` and `auto-research-s1-modelscope-query`.
 2. **Download**: Download candidate datasets.
 3. **Analyze**: For each downloaded dataset, check:
    - Format: JSONL / CSV / parquet? Loadable by standard scripts?
-   - Scale: sample count sufficient? (flag if < 100)
+   - Scale: sample count sufficient? (benchmark: flag if < 100; training: flag if < 500)
    - Content: read 5-10 random samples — are inputs well-formed? Language correct?
-   - Labels: does it have the required annotations (e.g., harmful/harmless, category tags)?
-   - Overlap: is it substantially different from already-selected benchmarks? (avoid near-duplicates)
+   - Labels: does it have the required annotations?
+   - Overlap: is it substantially different from already-selected datasets? (avoid near-duplicates)
+   - **For training data additionally**: compatible with training pipeline format (e.g., instruction-response pairs for SFT, prompt-only for GRPO)?
 4. **Decide**:
-   - ✅ Usable → record in `assets.md` + write analysis to `docs/data_analysis.md`
-   - ❌ Not usable (too small, wrong format, missing labels, duplicate) → log reason, continue searching
-5. **Terminate**: ≥ 3 benchmarks marked usable. If search exhausted with < 3, report to user and discuss alternatives.
+   - ✅ Usable → record in `assets.md` (mark category: benchmark / training) + write analysis to `docs/data_analysis.md`
+   - ❌ Not usable → log reason, continue searching
+5. **Terminate**: ≥ 3 benchmarks AND ≥ 1 training dataset marked usable. If search exhausted without meeting thresholds, report to user.
 
 **`docs/data_analysis.md` format**:
 ```markdown
 ## {Dataset Name}
+- **Category**: benchmark / training
 - **Source**: {platform + ID}
 - **Scale**: {N} samples
 - **Format**: {JSONL/CSV/...}, fields: {list}
 - **Sample preview**: {1-2 example inputs, truncated}
 - **Labels**: {description of annotations}
 - **Usability**: ✅ / ❌ {reason}
-- **Selected for**: {main eval / ablation / transfer test}
+- **Usage restriction**: test-only / training-allowed
+- **Selected for**: {main eval / ablation / transfer test / SFT / GRPO / ...}
 ```
 
 ### 3.3 Baselines
@@ -178,7 +186,7 @@ Search for open-source implementations of comparable methods:
 ### 3.4 Download & Verify
 
 Execute downloads for all pending items. Update status in `assets.md` / `baselines.md`.
-**Exit condition**: All models available (config models verified, additional models downloaded), ≥ 3 benchmark datasets pass usability check with analysis recorded in `data_analysis.md`, ≥ 2 baseline repos cloned or marked "no public repo".
+**Exit condition**: All models available (config models verified, additional models downloaded), ≥ 3 benchmarks + ≥ 1 training dataset pass usability check with analysis recorded in `data_analysis.md`, ≥ 2 baseline repos cloned or marked "no public repo".
 
 ## 4. Progress Tracking
 

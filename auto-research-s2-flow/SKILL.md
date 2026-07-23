@@ -2,7 +2,7 @@
 name: auto-research-s2-flow
 description: Stage 2 flow control — orchestrates coding & experimenting from confirmed idea to paper-ready results
 metadata:
-  version: "0.1"
+  version: "0.2"
 ---
 
 # S2 Flow: Coding & Experimenting
@@ -11,165 +11,177 @@ metadata:
 
 ```mermaid
 flowchart TD
-    START([S1 Idea 确认]) --> V[Step 1: 资产验证<br/>模型/数据集/baseline]
-    V --> INFRA[Step 2: 评估基础设施<br/>eval.py + metrics]
-    INFRA --> DEPLOY[Step 3: 部署模型服务<br/>vLLM serve]
-    DEPLOY --> SANITY[Step 4: Sanity Check<br/>baseline ±2%]
-    SANITY --> PILOT[Step 5: Pilot 实验<br/>100-200 samples]
-    PILOT --> IMPL[Step 6-7: 实现<br/>baselines + core method]
-    IMPL --> CHECKLIST[Step 8: Pre-review Checklist<br/>实验矩阵]
-    CHECKLIST --> EXP[Step 9: 实验矩阵<br/>迭代执行]
-    EXP --> ANALYZE[Step 10: 分析<br/>充分性检查]
-    ANALYZE --> SUFF{结果充分?}
-    SUFF -->|否| EXP
-    SUFF -->|是| GATE{用户确认}
+    START([S1 Idea 确认]) --> V[2.1 资产验证<br/>模型 ∥ 数据集 ∥ baseline 并行检查]
+    V --> INFRA[2.2 评估基础设施<br/>数据加载 + 测试脚本 + 统一接口]
+    INFRA --> BASE[2.3 Baseline 复现<br/>部署 + 测试 + 验证 ±2%]
+    BASE --> IMPL[2.4 核心方法实现<br/>+ 对比实验循环]
+    IMPL --> LOOP{优化循环}
+    LOOP --> RUN[方法 + 训练集 → 训练/运行]
+    RUN --> TEST[benchmark 测试]
+    TEST --> ANALYZE[分析 & 反馈<br/>问题定位: 方法 or 超参?]
+    ANALYZE --> CONV{连续 k 次无效<br/>OR 轮次 ≥ max?}
+    CONV -->|否| RUN
+    CONV -->|是| ABL[2.5 消融实验]
+    ABL --> DOC[2.6 实验文档整理<br/>表格 + 结果 + checklist]
+    DOC --> GATE{用户确认}
     GATE -->|确认| OUT([→ S3])
-    GATE -->|补实验| EXP
-    PILOT -->|无信号| ROLLBACK([回滚: 换 idea / 回 S1])
+    GATE -->|补实验| LOOP
+    IMPL -->|方法根本不可行| ROLLBACK([回滚: 换 idea / 回 S1])
 ```
 
 > **Skill invocation**: To invoke a sub-skill, read its `SKILL.md` file and follow the instructions within it. Skills are guidance documents, not executable commands.
+
+> **用户交互**: 整个 S2 过程中，agent 可随时向用户提出问题或请求指示（如超参数范围确认、方法设计选择、异常结果解读）。不要闷头猜测，主动沟通。
 
 ## Entry Condition
 
 Verify ALL before starting. If any fails → report to user, do not proceed.
 
-- [ ] `docs/topic_gap_idea.md` exists with user-confirmed idea selected
-- [ ] `docs/assets.md` exists (models + datasets with download commands)
+- [ ] `docs/topic_gap_idea.md` exists with user-confirmed idea
+- [ ] `docs/assets.md` exists (models + datasets verified)
+- [ ] `docs/data_analysis.md` exists (≥ 3 benchmarks + ≥ 1 training data)
 - [ ] `docs/baselines.md` exists (baseline methods with repos)
 - [ ] `project_config.yaml` exists at project root
 
 ## Steps
 
-### Step 1: Asset Verification & Download
+### 2.1 Asset Verification (Parallel)
 
 **Entry**: Entry condition met.
-**Action**:
-- Read `project_config.yaml`. For each model in `models:`:
-  - Local (`type: local`): check `path` contains `config.json` / `*.safetensors`. If missing → invoke `auto-research-s2-asset-download`.
-  - API (`type: api`): invoke `auto-research-s2-model-call` with test prompt (max_tokens=5). If fails → report error, ask user to check URL/key.
-- Verify each dataset in `docs/assets.md` is loadable from `data/`.
-- Verify each baseline repo in `docs/baselines.md` is cloned and dependencies installable.
-- Update status columns in `assets.md` / `baselines.md`.
+**Action**: 三类资产**并行**检查：
 
-**Exit**: ALL items in `assets.md` and `baselines.md` marked verified.
-**Failure**: Block on any unverifiable item. Report to user with specific error.
+| 检查项 | 操作 | 通过标准 |
+|--------|------|---------|
+| 模型 | 本地: 检查 path 有 config.json + safetensors；API: 发送测试请求 | 全部可用 |
+| 数据集 | 加载每个 benchmark 和 training data，验证格式和规模 | 与 data_analysis.md 一致 |
+| Baseline | 检查 repo 已克隆，依赖可安装 | 全部可运行 |
 
-### Step 2: Build Eval Infrastructure
+缺失项调用 `auto-research-s2-asset-download` 补充。
+**Exit**: ALL items verified.
+**Failure**: Block on any unverifiable item, report to user.
+
+### 2.2 Build Eval Infrastructure
 
 **Entry**: All assets verified.
-**Action**: Invoke `auto-research-s2-eval-infrastructure` to create:
-- `scripts/eval.py` — unified evaluation entry point
-- Metric functions (ASR judge, keyword match, etc. — determined by idea type)
-- Result I/O format: JSON per-sample + aggregated markdown tables
+**Action**: Invoke `auto-research-s2-eval-infrastructure`，构建统一评估体系：
+- **数据加载**: `src/data_loader.py` — 统一接口加载所有 benchmark 和 training data（从 `data_analysis.md` 读取格式信息）
+- **评估脚本**: `scripts/eval.py` — 统一入口，支持 `--dataset` `--method` `--output` 参数
+- **指标函数**: 根据 idea 类型确定（ASR judge、accuracy、BLEU 等）
+- **结果格式**: JSON per-sample + aggregated markdown table
+- **统一接口**: 所有方法（baseline + core）实现相同的 `run(inputs) -> outputs` 接口
 
-**Exit**: `python scripts/eval.py --dummy` runs without error on synthetic data.
-**Failure**: Fix import/config issues before proceeding.
+**Exit**: `python scripts/eval.py --dummy` 在合成数据上无错运行。
+**Failure**: Fix imports/config before proceeding.
 
-### Step 3: Deploy Model Servers
+### 2.3 Baseline Reproduction
 
-**Entry**: Eval infrastructure working. Local models verified in Step 1.
-**Action**: For each local model requiring inference, invoke `auto-research-s2-vllm-deploy` to launch a vLLM server. Record endpoints in `project_config.yaml`.
-**Exit**: All servers respond to `GET /v1/models` with expected model ID.
-**Failure**: Check GPU memory, port conflicts. Retry or report.
-
-### Step 4: Sanity Check — Reproduce Baseline
-
-**Entry**: Servers up, eval script working.
-**Action**: Run the primary baseline (first entry in `baselines.md`) on 50–100 samples. Compare against the paper-reported number.
-**Exit**: Result within **±2%** of reported value.
-**Failure**: Debug (data version, prompt format, hyperparams, generation config). Re-run. Do NOT proceed until within tolerance.
-
-### Step 5: Pilot Experiment
-
-**Entry**: Baseline sanity passed.
-**Action**: Run proposed method on 100–200 samples end-to-end:
-- Data loading → method execution → evaluation → result saving
-- If method requires training: train → save checkpoint → deploy checkpoint (Step 3 pattern) → eval. Each handoff must be explicit and verified.
-- **出题型 branch**: pilot is data construction pipeline (generate → filter → annotate subset) + run one baseline on constructed data.
-
-**Exit**: Pipeline completes without crash. Initial signal visible (metric non-trivial, not random).
-**Failure**: Debug integration bugs (max 3 attempts). If still no signal → **Rollback** (see below).
-
-### Step 6: Implement Baselines (Full)
-
-**Entry**: Pilot passed.
-**Action**: For each baseline in `baselines.md`:
-- Wrap in `src/baselines/{name}.py` (OOP interface with `run()`)
-- Create `exp/baseline_{name}.sh`
-- Run on full dataset, verify reproduction within ±2%
-- Reference `auto-research-s2-model-call` for API patterns, `auto-research-s2-vllm-deploy` for serving
-
-**Exit**: All baseline results saved in `output/baselines/`. Reproduction verified.
-**Failure**: For any baseline that won't reproduce: document deviation, note in results as "our reimplementation".
-
-### Step 7: Implement Core Method (Full)
-
-**Entry**: Baselines complete.
-**Action**: Implement proposed method in `src/methods/`:
-- Clean OOP interface, configurable via YAML/CLI
-- Logging at key steps
-- If training needed: full training run, checkpoint management, redeploy
-- Create `exp/method_{name}.sh`
-- **出题型 branch**: implement data construction pipeline in `src/data_construction/`, quality metrics in eval
-
-**Exit**: Method runs on full dataset without error. Results saved.
-**Failure**: Debug. If fundamental issue → Rollback.
-
-### Step 8: Generate Pre-review Checklist
-
-**Entry**: Core method produces results.
-**Action**: Create `docs/pre_review_checklist.md`:
-- Experiment matrix: method × dataset × metric
-- Mark each cell **must-run** or **nice-to-have**
-- Ablation list: components to remove/replace
-- Efficiency experiments: wall-clock, GPU memory (if relevant)
-- **出题型**: add data quality/diversity metrics, human eval plan
-
-**Exit**: `docs/pre_review_checklist.md` exists with complete matrix.
-
-### Step 9: Run Experiment Matrix (ITERATIVE)
-
-**Entry**: Checklist generated.
-**Action**: This is a **loop**, not one-shot:
-1. Run all **must-run** experiments first (invoke `auto-research-s2-experiment-runner`)
-2. After each batch: invoke `auto-research-s2-result-analysis` for interim tables
-3. Assess: missing ablation? Weak result needs another seed? Nice-to-have now feasible?
-4. If yes → add to queue, continue loop
-5. If no → terminate loop
-
-Log each experiment immediately after completion (see Progress Tracking).
-
-**Termination**: ALL must-run experiments have status SUCCESS.
-**Failure**: If an experiment fails 3× → mark BLOCKED, note in checklist, continue with others.
-
-### Step 10: Final Analysis & Sufficiency Check
-
-**Entry**: All must-run experiments complete.
+**Entry**: Eval infrastructure working.
 **Action**:
-- Invoke `auto-research-s2-result-analysis` for comprehensive tables (main, ablation, efficiency)
-- Write `docs/experiment_results.md`: tables + key findings + failure analysis
-- Sufficiency check: Do results support the paper claim? Missing comparisons? Statistical significance?
-- If insufficient → identify specific gap, add experiments, **loop back to Step 9**
+1. 部署所需模型服务（invoke `auto-research-s2-vllm-deploy`）
+2. 对每个 baseline：
+   - 封装为 `src/baselines/{name}.py`（统一接口）
+   - 创建 `exp/baseline_{name}.sh`
+   - 在**所有 benchmark** 上运行测试
+   - 与论文报告数值对比
+3. **Sanity check**: 主 baseline 结果须在论文报告值 **±2%** 内
 
-**Exit**: `docs/experiment_results.md` complete. Sufficiency assessed.
+**Exit**: All baseline results saved in `output/baselines/`，主 baseline 通过 sanity check。
+**Failure**: 调试（数据版本、prompt 格式、生成配置）。±2% 内不通过则**不进入 2.4**。
+
+### 2.4 Core Method + Comparison Experiment Loop
+
+**Entry**: Baselines reproduced.
+**Action**:
+
+#### 2.4.1 实现核心方法
+- 实现于 `src/methods/`，统一接口，YAML/CLI 可配置
+- 如需训练：训练 → checkpoint → 部署 → 评估（每步显式验证）
+- 创建 `exp/method_{name}.sh`
+
+#### 2.4.2 对比实验循环
+
+**只进行对比实验**（core method vs baselines），不做消融。
+
+```
+exp_iter = 0
+consecutive_fail = 0
+
+while consecutive_fail < k AND exp_iter < max_exp_iter:
+    1. 基于当前方法 + 训练集，执行一轮优化尝试
+       - 允许小规模网格搜索（超参数组合，规模 < 全量网格）
+       - 记录本轮配置
+    2. 在所有 benchmark 上测试
+    3. 分析 & 反馈：
+       - 与 baseline 对比：提升/持平/下降？
+       - 问题定位：核心方法设计问题 or 超参数问题？
+       - 训练曲线分析：过拟合/欠拟合/不收敛？
+    4. 判定：
+       - 有效提升 → consecutive_fail = 0，记录最优配置
+       - 无效/退步 → consecutive_fail += 1
+       - 记录诊断结论 → 指导下一轮调整方向
+    5. exp_iter += 1
+```
+
+**参数默认值**: `k = 3`（连续 3 次优化无效视为收敛），`max_exp_iter = 10`。用户可在 `project_config.yaml` 中覆盖。
+
+**每轮记录**（写入 `docs/stage2_progress.md`）：
+```markdown
+## Exp Iter {N}
+- Config: {key hyperparams}
+- Results: {metric per benchmark}
+- vs Baseline: {delta}
+- Diagnosis: {方法问题 / 超参问题 / 数据问题}
+- Decision: {调整方向 / 收敛停止}
+```
+
+**Exit**: 收敛（连续 k 次无效）或达到 max_exp_iter。最优配置已记录。
+**Failure**: 方法根本不可行（所有尝试均无信号）→ **Rollback**。
+
+### 2.5 Ablation Experiments
+
+**Entry**: 2.4 收敛，最优配置确定。
+**Action**:
+- 基于 `pre_review_checklist.md` 中的消融列表
+- 逐个移除/替换核心组件，在 benchmark 上测试
+- 每个消融实验创建 `exp/ablation_{component}.sh`
+- 分析每个组件的贡献度
+
+**Exit**: 所有消融实验完成，组件贡献量化。
+**Failure**: 某消融实验失败 → 标记 BLOCKED，继续其他。
+
+### 2.6 Experiment Documentation
+
+**Entry**: 对比实验 + 消融实验完成。
+**Action**:
+1. 生成 `docs/pre_review_checklist.md`（若不存在则创建）：
+   - 实验矩阵：method × dataset × metric
+   - 标记 must-run / nice-to-have
+   - 消融清单 + 完成状态
+2. Invoke `auto-research-s2-result-analysis`，生成：
+   - 主结果表（method vs baselines，所有 benchmark）
+   - 消融表（组件贡献）
+   - 效率数据（wall-clock、GPU memory，如适用）
+3. 编写 `docs/experiment_results.md`：
+   - 完整表格 + key findings（≤ 7 条）
+   - 失败分析（哪些没 work，为什么）
+   - 统计显著性检查（提升 < 5% 需多 seed 验证）
+
+**Exit**: `experiment_results.md` + `pre_review_checklist.md` 完整。
 
 ## Rollback Protocol
 
-- **Pilot fails (Step 5)**: Log failure reason. Try next idea from S1 idea pool → restart from Step 5.
-- **All ideas in pool fail**: Report to user. Rollback to S1 for new idea generation.
-- **Individual experiment fails (Step 9)**: Mark BLOCKED, do not rollback entire stage.
-- Always log rollback events in `docs/stage2_progress.md`.
+- **2.4 方法不可行**: 记录失败原因，尝试 S1 idea pool 中下一个 idea → 从 2.4 重启
+- **Idea pool 耗尽**: 报告用户，回滚到 S1 重新搜索
+- **单个实验失败**: 标记 BLOCKED，不触发整体回滚
+- 所有回滚事件记录到 `docs/stage2_progress.md`
 
 ## Phase State Machine
 
-For resumption after interruption. Persist in `docs/stage2_progress.md`:
-
 ```
-asset_verify → infra_build → deploy → sanity → pilot → implementation → experiments → analysis → gate_pending → complete
+asset_verify → infra_build → baseline_repro → method_loop → ablation → documentation → gate_pending → complete
 ```
 
-On resume: read phase, jump to corresponding step. Steps are idempotent — safe to re-enter.
+On resume: read phase from `docs/stage2_progress.md`, jump to corresponding step.
 
 ## Progress Tracking
 
@@ -177,25 +189,20 @@ Maintain `docs/stage2_progress.md`:
 ```markdown
 # Stage 2 Progress
 - **Idea**: {confirmed idea title}
-- **Phase**: asset_verify | infra_build | deploy | sanity | pilot | implementation | experiments | analysis | gate_pending | complete
+- **Phase**: asset_verify | infra_build | baseline_repro | method_loop | ablation | documentation | gate_pending | complete
+- **Exp iterations**: {N}/{max_exp_iter}
+- **Consecutive fails**: {N}/{k}
+- **Best config**: {hyperparams}
 - **Ideas tried**: {N}/{pool size}
 - **Last updated**: {date}
-
-## Experiment Log
-
-### {experiment_name}
-- Status: SUCCESS / FAILED / BLOCKED
-- Config: {key hyperparams}
-- Key metric: {value}
-- Decision: {why proceed / retry / skip}
 ```
 
 ## Decision Gate (→ S3)
 
-After Step 10, present to user:
-1. Main results table (method vs baselines, all datasets)
-2. Ablation summary (which components matter)
-3. Sufficiency assessment: strengths + identified weaknesses
-4. Recommendation: **proceed to S3** / **run more experiments** (specify which)
+After 2.6, present to user:
+1. 主结果表（method vs baselines，所有 benchmark）
+2. 消融总结（哪些组件关键）
+3. 充分性评估：优势 + 已识别弱点
+4. 建议：**proceed to S3** / **补实验**（指明哪些）
 
 **Wait for user confirmation before marking Stage 2 complete.**

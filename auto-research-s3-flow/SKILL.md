@@ -2,7 +2,7 @@
 name: auto-research-s3-flow
 description: Stage 3 flow control — orchestrate paper writing from frozen idea and experiment results through review loop to final deliverables.
 metadata:
-  version: "0.1"
+  version: "0.2"
 ---
 
 # S3 Flow: Writing & Review
@@ -11,22 +11,22 @@ metadata:
 
 ```mermaid
 flowchart TD
-    START([S2 结果确认]) --> ENTRY[Entry: 验证输入<br/>frozen idea + results + related work]
-    ENTRY --> FIG[Step 1: 绘图<br/>Fig.1 问题图 + Fig.2 方法图]
-    FIG --> TAB[Step 2: 表格<br/>主表 + 消融表]
+    START([S2 结果确认]) --> ENTRY[Entry: 验证输入]
+    ENTRY --> FIG[3.1 绘图<br/>Fig.1 问题图 + Fig.2 方法图]
+    FIG --> TAB[3.2 表格<br/>主表 + 消融表]
     TAB --> PLOT{有可绘制数据?}
-    PLOT -->|是| PLOTGEN[Step 3: 数据图<br/>曲线/热力图]
+    PLOT -->|是| PLOTGEN[3.3 数据图<br/>曲线/热力图]
     PLOT -->|否| WRITE
-    PLOTGEN --> WRITE[Step 4: 写作<br/>Intro→Related→Method→Exp→Concl→Abstract]
-    WRITE --> REVIEW[Step 5: 审稿循环<br/>≤ 3 轮]
+    PLOTGEN --> WRITE[3.4 写作<br/>Intro→Related→Method→Exp→Concl→Abstract]
+    WRITE --> REVIEW[3.5 审稿循环<br/>≤ 3 轮]
     REVIEW --> CHECK{major=0<br/>AND score≥7?}
-    CHECK -->|是| GATE[Step 6: 用户审批]
+    CHECK -->|是| GATE[3.6 用户审批]
     CHECK -->|否, <3轮| REVISE[修改]
     REVISE --> REVIEW
     CHECK -->| plateau / 3轮| GATE
     REVIEW -->|缺实验| ROLLBACK([回滚 → S2 补实验])
     ROLLBACK --> TAB
-    GATE -->|批准| FINAL[Step 7: 交付物归档]
+    GATE -->|批准| FINAL[3.7 交付物归档]
     GATE -->|驳回| REVIEW
     FINAL --> DONE([完成])
 ```
@@ -39,11 +39,9 @@ Verify ALL before starting (abort with error if any missing):
 - `docs/topic_gap_idea_frozen.md` exists and contains a positioning statement
 - `docs/experiment_results.md` exists with ≥ 1 result table
 - `docs/related_work.md` exists with paper entries
-- `docs/pre_review_checklist.md` exists (S2 Step 8 output)
+- `docs/pre_review_checklist.md` exists (S2 2.6 output)
 
-## 1. Prepare Figures
-
-### Step 1: Draw Figures (drawio)
+## 3.1 Prepare Figures (drawio)
 - **Entry**: Entry condition satisfied.
 - **Action**: Invoke `auto-research-s3-figure-drawio` twice:
   - Fig.1: Problem illustration (≤ 6 nodes) → `paper/figures/fig1_problem.*`
@@ -51,17 +49,13 @@ Verify ALL before starting (abort with error if any missing):
 - **Exit**: Both figure files exist in `paper/figures/`.
 - **Failure**: Non-blocking — if drawio unavailable, log text descriptions as placeholders in `paper/figures/README.md` and continue.
 
-## 2. Generate Tables
-
-### Step 2: Tables (BLOCKING)
+## 3.2 Generate Tables (BLOCKING)
 - **Entry**: `docs/experiment_results.md` has parseable result data.
 - **Action**: Invoke `auto-research-s3-table-generator`. Generate main results table + ablation tables.
 - **Exit**: `paper/tables/` contains main results and ablation table files.
 - **Failure**: BLOCKING — cannot write Experiments section without tables. Report to orchestrator, pause S3.
 
-## 3. Generate Plots (Conditional)
-
-### Step 3: Plots
+## 3.3 Generate Plots (Conditional)
 - **Entry**: Tables generated. Check `docs/experiment_results.md` for plottable data.
 - **Action**: Execute ONLY if matching data exists:
   - Training curve data → line plot
@@ -71,17 +65,13 @@ Verify ALL before starting (abort with error if any missing):
 - **Exit**: Corresponding PDFs in `paper/figures/`, OR skip logged with reason in progress file.
 - **Failure**: Non-blocking — log skip reason, continue to writing.
 
-## 4. Write Paper Draft
-
-### Step 4: Full Draft
+## 3.4 Write Paper Draft
 - **Entry**: Tables exist; figures exist or are placeholder-logged.
 - **Action**: Invoke `auto-research-s3-paper-writing`. Writing order: Introduction → Related Work → Method → Experiments → Conclusion → Abstract (last).
 - **Exit**: `paper/paper_draft.md` exists with all sections; every table/figure referenced in text.
 - **Failure**: If a section cannot be written (missing data), mark `[TODO]` and continue; flag in progress file.
 
-## 5. Review-Revision Loop
-
-### Step 5: Iterative Review (max 3 rounds)
+## 3.5 Review-Revision Loop (max 3 rounds)
 - **Entry**: Complete draft exists.
 - **Action**: For each round N = 1, 2, 3:
 
@@ -97,21 +87,17 @@ Verify ALL before starting (abort with error if any missing):
 - **Exit**: Loop terminates with final score and remaining issues logged.
 - **Failure**: If review skill unavailable, log and proceed to approval gate with current draft.
 
-## 6. Final Approval Gate
-
-### Step 6: User Decision
+## 3.6 Final Approval Gate
 - **Entry**: Review loop terminated.
 - **Action**: Present to user:
   1. Final draft summary (title, contributions, key results)
   2. Review history (rounds, score trajectory, remaining minor issues)
   3. Outstanding rollback items (if any)
   4. Deliverables checklist status
-- **Exit**: User approves → proceed to Step 7. User rejects with feedback → re-enter Step 5 for one additional round (does not count toward 3-round cap).
+- **Exit**: User approves → proceed to 3.7. User rejects with feedback → re-enter 3.5 for one additional round (does not count toward 3-round cap).
 - **Failure**: N/A — gate blocks until user responds.
 
-## 7. Finalize Deliverables
-
-### Step 7: Verify & Close
+## 3.7 Finalize Deliverables
 - **Entry**: User approval received.
 - **Action**: Verify all items exist:
   - [ ] `paper/paper_draft.md` (complete, no `[TODO]` markers)
@@ -130,7 +116,7 @@ Triggered when review identifies missing experiments that cannot be addressed by
 2. List required experiments under "Rollback Required" with specifics (dataset, metric, model).
 3. Report to auto-research orchestrator for S2 supplementation.
 4. Pause S3 until new results appear in `docs/experiment_results.md`.
-5. On resumption: re-run Steps 2→3→4 (affected sections only) → resume review loop at round+1.
+5. On resumption: re-run 3.2→3.3→3.4 (affected sections only) → resume review loop at round+1.
 
 ## Phase State Machine
 

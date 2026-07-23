@@ -34,13 +34,14 @@ flowchart TD
     IDEA --> GATE{用户选定 Idea}
     GATE -->|确认| MODEL[3.1 模型准备<br/>config 优先 → 搜索补充]
     GATE -->|换方向| LOOP
-    MODEL --> BENCH[3.2A Benchmark<br/>公认优先 / 允许自建]
+    GATE -->|确认| BENCH[3.2A Benchmark<br/>公认优先 / 允许自建]
     BENCH --> BENCHCHECK{≥ 3 benchmark?}
     BENCHCHECK -->|否| BENCH
     BENCHCHECK -->|是| TRAIN[3.2B Training Data<br/>领域相关 + 泄露检查]
     TRAIN --> TRAINCHECK{≥ 1 训练集<br/>通过相关性检查?}
     TRAINCHECK -->|否| TRAIN
     TRAINCHECK -->|是| BASE[3.3 Baseline<br/>搜索 + 克隆]
+    MODEL --> BASE
     BASE --> OUT([→ S2])
 ```
 

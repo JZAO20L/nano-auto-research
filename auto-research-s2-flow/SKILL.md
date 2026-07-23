@@ -68,12 +68,21 @@ Verify ALL before starting. If any fails → report to user, do not proceed.
 ### 2.2 Build Eval Infrastructure
 
 **Entry**: All assets verified.
-**Action**: Invoke `auto-research-s2-eval-infrastructure`，构建统一评估体系：
+**Action**: 构建统一评估体系：
 - **数据加载**: `src/data_loader.py` — 统一接口加载所有 benchmark 和 training data（从 `data_analysis.md` 读取格式信息）
 - **评估脚本**: `scripts/eval.py` — 统一入口，支持 `--dataset` `--method` `--output` 参数
 - **指标函数**: 根据 idea 类型确定（ASR judge、accuracy、BLEU 等）
-- **结果格式**: JSON per-sample + aggregated markdown table
 - **统一接口**: 所有方法（baseline + core）实现相同的 `run(inputs) -> outputs` 接口
+
+**结果格式**（每个实验产出 `output/METHOD/DATASET/results.json`）：
+```json
+{
+  "method": "method_name",
+  "dataset": "benchmark_name",
+  "metrics": {"asr": 0.85, "n": 520, "successes": 442},
+  "per_sample": [{"prompt": "...", "response": "...", "success": true}]
+}
+```
 
 **Exit**: `python scripts/eval.py --dummy` 在合成数据上无错运行。
 **Failure**: Fix imports/config before proceeding.
@@ -138,6 +147,20 @@ while consecutive_fail < k AND exp_iter < max_exp_iter:
 - Diagnosis: {方法问题 / 超参问题 / 数据问题}
 - Decision: {调整方向 / 收敛停止}
 ```
+
+**实验脚本命名规范**：
+```
+exp/main_{METHOD}_{DATASET}.sh    # 主对比实验
+exp/ablation_{COMPONENT}.sh       # 消融实验
+exp/efficiency_{METHOD}.sh        # 效率测试
+exp/transfer_{SRC}_{TGT}.sh       # 迁移实验
+```
+
+**实验失败处理**：
+1. 记录错误到 `output/EXP_NAME/log.txt`
+2. 标记状态：SUCCESS / FAILED / BLOCKED
+3. 诊断：OOM → 减 batch size；timeout → 加时限；import error → 修依赖
+4. **不阻塞流水线**——继续下一个实验，修复后重试
 
 **Exit**: 收敛（连续 k 次无效）或达到 max_exp_iter。最优配置已记录。
 **Failure**: 方法根本不可行（所有尝试均无信号）→ **Rollback**。

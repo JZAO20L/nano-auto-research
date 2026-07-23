@@ -20,7 +20,7 @@ metadata:
 | `docs/baselines.md` | Baseline 方法 | 表格：方法/论文/repo/stars/复现难度/状态 |
 | `docs/stage1_progress.md` | 搜索日志 | 逐轮记录（关键词/新论文数/GAP 变化/idea 变动/终止决策）+ 全局状态 |
 
-**Exit condition**: 6 个文件全部存在且内容完整，≥ 3 benchmark + ≥ 1 训练数据集通过可用性检查，用户已在决策门选定 idea。
+**Exit condition**: 6 个文件全部存在且内容完整，≥ 3 benchmark + 训练数据（总样本 ≥ 2000，来源 ≥ 2）通过可用性检查，用户已在决策门选定 idea。
 
 ```mermaid
 flowchart TD
@@ -176,16 +176,23 @@ Datasets are split into two categories with **strict usage boundaries**:
 
 #### Phase B: Training Data 确定（基于已选 benchmark）
 
+> **Why 约束数据量和来源数**: 单一来源或小规模训练数据会导致模型过拟合训练分布，在实际测试中表现出高度自我 ego 和 reward hacking 行为（如生成固定模板、绕过评估逻辑而非真正解决问题）。多来源 + 足够规模是缓解此问题的基本前提。
+
+**硬约束**:
+- 训练数据**总样本量 ≥ 2000**
+- 训练数据**来源 ≥ 2 个不同数据集**（防止单一分布过拟合）
+
 **Loop**:
 1. **Search**: 寻找与已选 benchmark **领域相关**的训练数据。
 2. **Download & Analyze**: 同 Phase A 检查项 + 额外检查：
    - 训练管线格式兼容（SFT 需 instruction-response pairs，GRPO 需 prompt-only 等）
-   - 规模 ≥ 500
+   - 单数据集规模 ≥ 500
 3. **Relevance check**: 与已选 benchmark 对比——
    - 领域是否匹配？（如 benchmark 是 jailbreak 评测，训练数据应含安全相关语料）
    - 是否存在数据泄露风险？（训练集与测试集不能有样本级重叠）
    - ❌ 不相关或有泄露风险 → 继续搜索
-4. **Terminate**: ≥ 1 training dataset 通过相关性 + 可用性检查。若搜索耗尽仍无合适数据，报告用户讨论（可能需要自建或调整方法）。
+4. **Diversity check**: 已收集的训练数据是否来自 ≥ 2 个不同来源？分布是否有差异？（如一个偏正式指令、一个偏口语化）
+5. **Terminate**: 总样本量 ≥ 2000 AND 来源 ≥ 2 AND 全部通过相关性检查。若搜索耗尽仍未满足，报告用户讨论（可能需要自建或调整方法）。
 
 **`docs/data_analysis.md` format**:
 ```markdown
@@ -219,7 +226,7 @@ Search for open-source implementations of comparable methods:
 ### 3.4 Download & Verify
 
 Execute downloads for all pending items. Update status in `assets.md` / `baselines.md`.
-**Exit condition**: All models available (config models verified, additional models downloaded), ≥ 3 benchmarks + ≥ 1 training dataset pass usability check with analysis recorded in `data_analysis.md`, ≥ 2 baseline repos cloned or marked "no public repo".
+**Exit condition**: All models available (config models verified, additional models downloaded), ≥ 3 benchmarks + training data（总样本 ≥ 2000，来源 ≥ 2）pass usability check with analysis recorded in `data_analysis.md`, ≥ 2 baseline repos cloned or marked "no public repo".
 
 ## 4. Progress Tracking
 

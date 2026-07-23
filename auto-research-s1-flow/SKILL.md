@@ -32,9 +32,13 @@ flowchart TD
     TERM -->|否| KW
     TERM -->|是| IDEA[Idea 定稿<br/>去重叠 → 打分排序]
     IDEA --> GATE{用户选定 Idea}
-    GATE -->|确认| ASSET[资产准备<br/>模型/数据集/baseline 下载]
+    GATE -->|确认| MODEL[3.1 模型准备<br/>config 优先 → 搜索补充]
     GATE -->|换方向| LOOP
-    ASSET --> OUT([→ S2])
+    MODEL --> DATA[3.2 数据集循环<br/>搜索→下载→分析]
+    DATA --> DATACHECK{≥ 3 benchmark<br/>通过可用性检查?}
+    DATACHECK -->|否| DATA
+    DATACHECK -->|是| BASE[3.3 Baseline<br/>搜索 + 克隆]
+    BASE --> OUT([→ S2])
 ```
 
 ## 1. Search Loop

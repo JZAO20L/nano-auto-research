@@ -34,10 +34,13 @@ flowchart TD
     IDEA --> GATE{用户选定 Idea}
     GATE -->|确认| MODEL[3.1 模型准备<br/>config 优先 → 搜索补充]
     GATE -->|换方向| LOOP
-    MODEL --> DATA[3.2 数据集循环<br/>搜索→下载→分析]
-    DATA --> DATACHECK{≥ 3 benchmark<br/>通过可用性检查?}
-    DATACHECK -->|否| DATA
-    DATACHECK -->|是| BASE[3.3 Baseline<br/>搜索 + 克隆]
+    MODEL --> BENCH[3.2A Benchmark<br/>公认优先 / 允许自建]
+    BENCH --> BENCHCHECK{≥ 3 benchmark?}
+    BENCHCHECK -->|否| BENCH
+    BENCHCHECK -->|是| TRAIN[3.2B Training Data<br/>领域相关 + 泄露检查]
+    TRAIN --> TRAINCHECK{≥ 1 训练集<br/>通过相关性检查?}
+    TRAINCHECK -->|否| TRAIN
+    TRAINCHECK -->|是| BASE[3.3 Baseline<br/>搜索 + 克隆]
     BASE --> OUT([→ S2])
 ```
 
@@ -131,41 +134,53 @@ After user confirms an idea, **must** complete all three categories before proce
 | Llama-3-8B | search (HF) | meta-llama/Llama-3-8B | Cross-family target | ⬜ pending download |
 ```
 
-### 3.2 Datasets (Iterative)
+### 3.2 Datasets (Two-Phase)
 
 Datasets are split into two categories with **strict usage boundaries**:
 
 | 类别 | 用途 | 约束 |
 |------|------|------|
 | **Benchmark**（测试集） | 仅用于评估/测试，**禁止参与训练** | ≥ 3 个，需通过可用性检查 |
-| **Training data**（训练数据） | 用于学习/微调/数据增强/RL 训练等 | ≥ 1 个，需满足训练管线格式 |
+| **Training data**（训练数据） | 用于学习/微调/数据增强/RL 训练等 | ≥ 1 个，需与 benchmark 领域相关 |
 
-**Loop** (applies to both categories):
-1. **Search**: Identify candidates from the idea's method sketch and related work. Search via `auto-research-s1-huggingface-query` and `auto-research-s1-modelscope-query`.
-2. **Download**: Download candidate datasets.
-3. **Analyze**: For each downloaded dataset, check:
-   - Format: JSONL / CSV / parquet? Loadable by standard scripts?
-   - Scale: sample count sufficient? (benchmark: flag if < 100; training: flag if < 500)
-   - Content: read 5-10 random samples — are inputs well-formed? Language correct?
-   - Labels: does it have the required annotations?
-   - Overlap: is it substantially different from already-selected datasets? (avoid near-duplicates)
-   - **For training data additionally**: compatible with training pipeline format (e.g., instruction-response pairs for SFT, prompt-only for GRPO)?
-4. **Decide**:
-   - ✅ Usable → record in `assets.md` (mark category: benchmark / training) + write analysis to `docs/data_analysis.md`
-   - ❌ Not usable → log reason, continue searching
-5. **Terminate**: ≥ 3 benchmarks AND ≥ 1 training dataset marked usable. If search exhausted without meeting thresholds, report to user.
+#### Phase A: Benchmark 确定（先做）
+
+**Loop**:
+1. **Search**: 优先寻找领域内**公认 benchmark**（related work 中高频引用的评测集）。Search via `auto-research-s1-huggingface-query` and `auto-research-s1-modelscope-query`.
+2. **Download & Analyze**: 检查格式/规模/样本内容/标签/去重。
+3. **Decide**: ✅ 可用 → 记录；❌ 不可用 → 继续搜索。
+4. **Self-built option**: 若研究服务于特定业务需求，或公认 benchmark 不足 3 个，允许**自建 benchmark**：
+   - 说明自建理由（业务场景无公开评测集 / 现有 benchmark 未覆盖目标能力）
+   - 定义构建方案（数据来源、标注规范、规模目标）
+   - 记录到 `data_analysis.md` 并标注 `category: benchmark (self-built)`
+   - 自建 benchmark 同样需通过可用性检查（格式可加载、样本 ≥ 100）
+5. **Terminate**: ≥ 3 benchmarks 确定（公认 + 自建混合可）。
+
+#### Phase B: Training Data 确定（基于已选 benchmark）
+
+**Loop**:
+1. **Search**: 寻找与已选 benchmark **领域相关**的训练数据。
+2. **Download & Analyze**: 同 Phase A 检查项 + 额外检查：
+   - 训练管线格式兼容（SFT 需 instruction-response pairs，GRPO 需 prompt-only 等）
+   - 规模 ≥ 500
+3. **Relevance check**: 与已选 benchmark 对比——
+   - 领域是否匹配？（如 benchmark 是 jailbreak 评测，训练数据应含安全相关语料）
+   - 是否存在数据泄露风险？（训练集与测试集不能有样本级重叠）
+   - ❌ 不相关或有泄露风险 → 继续搜索
+4. **Terminate**: ≥ 1 training dataset 通过相关性 + 可用性检查。若搜索耗尽仍无合适数据，报告用户讨论（可能需要自建或调整方法）。
 
 **`docs/data_analysis.md` format**:
 ```markdown
 ## {Dataset Name}
-- **Category**: benchmark / training
-- **Source**: {platform + ID}
+- **Category**: benchmark / benchmark (self-built) / training
+- **Source**: {platform + ID / "self-built: 构建方案见下"}
 - **Scale**: {N} samples
 - **Format**: {JSONL/CSV/...}, fields: {list}
 - **Sample preview**: {1-2 example inputs, truncated}
 - **Labels**: {description of annotations}
 - **Usability**: ✅ / ❌ {reason}
 - **Usage restriction**: test-only / training-allowed
+- **Relevance to benchmarks**: {与哪些 benchmark 领域相关，泄露检查结果}
 - **Selected for**: {main eval / ablation / transfer test / SFT / GRPO / ...}
 ```
 

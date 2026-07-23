@@ -1,0 +1,23 @@
+# project_config.yaml — User fills in, agent reads only
+topic: "Automated Structured Literature Review Generation: Can LLMs produce publication-ready related work sections from arxiv search results?"
+method_sketch: "Pipeline: arxiv search → paper selection → structured extraction → section generation. Train Qwen3-4B via SFT on (search results, human-written related work) pairs, evaluate against human-written references."
+target_venue: "Workshop / Technical Report"
+constraints:
+  compute: "1x A100 80GB"
+  timeline: "1 week"
+
+models:
+  # Local models: agent checks path, downloads if missing
+  - name: Qwen3-4B
+    type: local
+    path: /home/tiger/models/Qwen/Qwen3-4B
+    description: "Backbone for SFT training and inference"
+
+  # API models: agent tests connectivity
+  # - name: qwen-max
+  #   type: api
+  #   url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  #   api_key: sk-xxx
+  #   max_concurrency: 10
+  #   rpm: 60
+  #   description: "Remote baseline for comparison"

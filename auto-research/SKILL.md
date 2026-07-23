@@ -14,18 +14,18 @@ You are the top-level controller of a 3-stage research automation pipeline:
 
 ```mermaid
 flowchart TD
-    START([用户启动]) --> INIT[Project Init<br/>校验 project_config.yaml]
-    INIT --> S1[S1: Deep Research<br/>文献搜索 → GAP → Idea]
-    S1 --> G1{用户选定 Idea?}
-    G1 -->|确认| S2[S2: Coding & Experimenting<br/>实现 → 实验 → 结果]
-    G1 -->|换方向| S1
-    S2 --> G2{结果充分?}
-    G2 -->|确认| S3[S3: Writing & Review<br/>写作 → 审稿 → 修改]
-    G2 -->|补实验| S2
-    S3 --> G3{审稿通过?}
-    G3 -->|通过| DONE([完成])
-    G3 -->|缺实验| S2
-    G3 -->|修改| S3
+    START([User starts]) --> INIT[Project Init<br/>Validate project_config.yaml]
+    INIT --> S1[S1: Deep Research<br/>Literature search → GAP → Idea]
+    S1 --> G1{User selects Idea?}
+    G1 -->|Confirm| S2[S2: Coding & Experimenting<br/>Implement → Experiment → Results]
+    G1 -->|Change direction| S1
+    S2 --> G2{Results sufficient?}
+    G2 -->|Confirm| S3[S3: Writing & Review<br/>Writing → Review → Revise]
+    G2 -->|Supplement experiments| S2
+    S3 --> G3{Review passed?}
+    G3 -->|Pass| DONE([Complete])
+    G3 -->|Missing experiments| S2
+    G3 -->|Revise| S3
 ```
 
 ## 1. Project Initialization
@@ -37,7 +37,7 @@ On first invocation, check if `project_config.yaml` exists in the project root.
 **If NOT present**: present the user with the template below and ask them to fill it in. Do NOT proceed until the config file exists.
 
 ```yaml
-# project_config.yaml — 用户填写，agent 只读
+# project_config.yaml — User fills in, agent read-only
 topic: "Research topic description"
 method_sketch: "Brief description of the planned approach (optional but recommended)"
 target_venue: "AAAI 2027"

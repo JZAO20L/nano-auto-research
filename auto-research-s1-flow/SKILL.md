@@ -11,36 +11,36 @@ metadata:
 
 ### Deliverables
 
-| 文件 | 内容 | 预期形态 |
-|------|------|---------|
-| `docs/related_work.md` | 文献综述 | 按方法族分节，每篇含 title/venue/method/results/relevance + arxiv link + BibTeX |
-| `docs/topic_gap_idea.md` | 研究定位 | Topic → Gap（证据支撑）→ Positioning → Idea Pool（3-5 个，含评分）→ Status |
-| `docs/assets.md` | 模型 + 数据集 | 表格：config 模型（已验证）+ 搜索补充模型 + benchmark 数据集，含下载命令和状态 |
-| `docs/data_analysis.md` | 数据集可用性分析 | 每个 benchmark 的格式/规模/样本预览/标签/可用性判定 |
-| `docs/baselines.md` | Baseline 方法 | 表格：方法/论文/repo/stars/复现难度/状态 |
-| `docs/stage1_progress.md` | 搜索日志 | 逐轮记录（关键词/新论文数/GAP 变化/idea 变动/终止决策）+ 全局状态 |
+| File | Content | Expected format |
+|------|---------|----------------|
+| `docs/related_work.md` | Literature review | Organized by method family, each entry with title/venue/method/results/relevance + arxiv link + BibTeX |
+| `docs/topic_gap_idea.md` | Research positioning | Topic → Gap (evidence-backed) → Positioning → Idea Pool (3-5, with scores) → Status |
+| `docs/assets.md` | Models + Datasets | Table: config models (verified) + search-supplemented models + benchmark datasets, with download commands and status |
+| `docs/data_analysis.md` | Dataset usability analysis | Format/scale/sample preview/labels/usability assessment for each benchmark |
+| `docs/baselines.md` | Baseline methods | Table: method/paper/repo/stars/reproduction difficulty/status |
+| `docs/stage1_progress.md` | Search log | Per-round records (keywords/new paper count/GAP changes/idea changes/termination decisions) + global status |
 
-**Exit condition**: 6 个文件全部存在且内容完整，≥ 3 benchmark + 训练数据（总样本 ≥ 2000，来源 ≥ 2）通过可用性检查，用户已在决策门选定 idea。
+**Exit condition**: All 6 files exist with complete content, ≥ 3 benchmarks + training data (total samples ≥ 2000, sources ≥ 2) pass usability check, user has selected an idea at the decision gate.
 
 ```mermaid
 flowchart TD
-    START([Topic 输入]) --> LOOP[搜索循环]
-    LOOP --> KW[设计关键词<br/>3-5组 × 20篇/组]
-    KW --> SEARCH[arxiv + GitHub 搜索]
-    SEARCH --> SYN[累积综合<br/>related_work + GAP + idea pool]
-    SYN --> TERM{round > 5<br/>AND 新论文 ≤ 5?}
-    TERM -->|否| KW
-    TERM -->|是| IDEA[Idea 定稿<br/>去重叠 → 打分排序]
-    IDEA --> GATE{用户选定 Idea}
-    GATE -->|确认| MODEL[3.1 模型准备<br/>config 优先 → 搜索补充]
-    GATE -->|换方向| LOOP
-    GATE -->|确认| BENCH[3.2A Benchmark<br/>公认优先 / 允许自建]
-    BENCH --> BENCHCHECK{≥ 3 benchmark?}
-    BENCHCHECK -->|否| BENCH
-    BENCHCHECK -->|是| TRAIN[3.2B Training Data<br/>领域相关 + 泄露检查]
-    TRAIN --> TRAINCHECK{≥ 1 训练集<br/>通过相关性检查?}
-    TRAINCHECK -->|否| TRAIN
-    TRAINCHECK -->|是| BASE[3.3 Baseline<br/>搜索 + 克隆]
+    START([Topic input]) --> LOOP[Search Loop]
+    LOOP --> KW[Design Keywords<br/>3-5 sets × 20 papers/set]
+    KW --> SEARCH[arxiv + GitHub search]
+    SEARCH --> SYN[Cumulative Synthesis<br/>related_work + GAP + idea pool]
+    SYN --> TERM{round > 5<br/>AND new papers ≤ 5?}
+    TERM -->|No| KW
+    TERM -->|Yes| IDEA[Idea finalization<br/>Remove overlap → Score & rank]
+    IDEA --> GATE{User selects Idea}
+    GATE -->|Confirm| MODEL[3.1 Model Preparation<br/>Config first → Search supplement]
+    GATE -->|Change direction| LOOP
+    GATE -->|Confirm| BENCH[3.2A Benchmark<br/>Established benchmarks first / Self-built allowed]
+    BENCH --> BENCHCHECK{≥ 3 benchmarks?}
+    BENCHCHECK -->|No| BENCH
+    BENCHCHECK -->|Yes| TRAIN[3.2B Training Data<br/>Domain-relevant + Leakage check]
+    TRAIN --> TRAINCHECK{≥ 1 training set<br/>Pass relevance check?}
+    TRAINCHECK -->|No| TRAIN
+    TRAINCHECK -->|Yes| BASE[3.3 Baseline<br/>Search + Clone]
     MODEL --> BASE
     BASE --> OUT([→ S2])
 ```
@@ -108,23 +108,23 @@ After search terminates, finalize the idea pool built during the search loop:
 ```markdown
 ### Idea: {title}
 
-**Claim**: 一句话核心主张（"X 能提升 Y 因为 Z"）
-**Causal link**: 为什么 Z 能导致 Y？（机制假设，不是相关性）
-**Closest work**: 最接近的 1-2 篇论文 + 关键区别
+**Claim**: One-sentence core claim ("X improves Y because Z")
+**Causal link**: Why does Z cause Y? (Mechanism hypothesis, not correlation)
+**Closest work**: 1-2 closest papers + key differences
 
 **Method Design**:
-- **Overview**: 方法整体流程（输入 → 模块A → 模块B → ... → 输出）
+- **Overview**: Overall method flow (input → Module A → Module B → ... → output)
 - **Modules**:
-  | 模块 | 功能 | 实现方式 | 可调设计 |
-  |------|------|---------|---------|
-  | e.g., Skill Retriever | 从库中检索相关 skill | BM25 词法匹配 | 匹配算法（BM25/embedding）、top-k |
-  | e.g., Prompt Composer | 将 skill 注入 prompt | 模板拼接 | 注入位置（system/user）、拼接顺序 |
-- **Training** (if applicable): 训练目标、数据格式、损失函数
-- **Inference**: 推理流程、调用次数、预期开销
+  | Module | Function | Implementation | Tunable design |
+  |--------|----------|---------------|----------------|
+  | e.g., Skill Retriever | Retrieve relevant skills from library | BM25 lexical matching | Matching algorithm (BM25/embedding), top-k |
+  | e.g., Prompt Composer | Inject skills into prompt | Template concatenation | Injection position (system/user), concatenation order |
+- **Training** (if applicable): Training objective, data format, loss function
+- **Inference**: Inference flow, number of calls, expected cost
 
-**Evidence needed**: 需要什么实验来验证 claim？（对比实验/消融/分析）
-**Feasibility**: 计算/数据/时间评估（high/medium/low）
-**Risk**: 最可能失败的原因 + 备选方案
+**Evidence needed**: What experiments are needed to verify the claim? (Comparison/ablation/analysis)
+**Feasibility**: Compute/data/time assessment (high/medium/low)
+**Risk**: Most likely failure reason + fallback plan
 **Score**: novelty(1-5) × feasibility(1-5)
 ```
 
@@ -156,60 +156,60 @@ After user confirms an idea, **must** complete all three categories before proce
 
 Datasets are split into two categories with **strict usage boundaries**:
 
-| 类别 | 用途 | 约束 |
-|------|------|------|
-| **Benchmark**（测试集） | 仅用于评估/测试，**禁止参与训练** | ≥ 3 个，需通过可用性检查 |
-| **Training data**（训练数据） | 用于学习/微调/数据增强/RL 训练等 | ≥ 1 个，需与 benchmark 领域相关 |
+| Category | Usage | Constraints |
+|----------|-------|-------------|
+| **Benchmark** (test set) | Evaluation/testing only, **must NOT participate in training** | ≥ 3, must pass usability check |
+| **Training data** | For learning/fine-tuning/data augmentation/RL training etc. | ≥ 1, must be domain-relevant to benchmarks |
 
-#### Phase A: Benchmark 确定（先做）
-
-**Loop**:
-1. **Search**: 优先寻找领域内**公认 benchmark**（related work 中高频引用的评测集）。Search via `auto-research-s1-huggingface-query` and `auto-research-s1-modelscope-query`.
-2. **Download & Analyze**: 检查格式/规模/样本内容/标签/去重。
-3. **Decide**: ✅ 可用 → 记录；❌ 不可用 → 继续搜索。
-4. **Self-built option**: 若研究服务于特定业务需求，或公认 benchmark 不足 3 个，允许**自建 benchmark**：
-   - 说明自建理由（业务场景无公开评测集 / 现有 benchmark 未覆盖目标能力）
-   - 定义构建方案（数据来源、标注规范、规模目标）
-   - 记录到 `data_analysis.md` 并标注 `category: benchmark (self-built)`
-   - 自建 benchmark 同样需通过可用性检查（格式可加载、样本 ≥ 100）
-5. **Terminate**: ≥ 3 benchmarks 确定（公认 + 自建混合可）。
-
-#### Phase B: Training Data 确定（基于已选 benchmark）
-
-> **Why 约束数据量和来源数**: 单一来源或小规模训练数据会导致模型过拟合训练分布，在实际测试中表现出高度自我 ego 和 reward hacking 行为（如生成固定模板、绕过评估逻辑而非真正解决问题）。多来源 + 足够规模是缓解此问题的基本前提。
-
-**硬约束**:
-- 训练数据**总样本量 ≥ 2000**
-- 训练数据**来源 ≥ 2 个不同数据集**（防止单一分布过拟合）
+#### Phase A: Benchmark Selection (First)
 
 **Loop**:
-1. **Search**: 寻找与已选 benchmark **领域相关**的训练数据。
-2. **Download & Analyze**: 同 Phase A 检查项 + 额外检查：
-   - 训练管线格式兼容（SFT 需 instruction-response pairs，GRPO 需 prompt-only 等）
-   - 单数据集规模 ≥ 500
-3. **Relevance check**（必须通过，否则 ❌ 继续搜索）:
-   - **任务级对齐**: 训练数据的任务类型必须与 benchmark 高度一致。例如：
-     - benchmark 测 jailbreak 攻击 → 训练数据须含攻击 prompt 生成/改写任务，不能只是通用安全问答
-     - benchmark 测代码生成 → 训练数据须含 code instruction-response pairs，不能只是自然语言对话
-   - **领域匹配**: 主题/领域与 benchmark 一致（如安全、医疗、法律）
-   - **无数据泄露**: 训练集与测试集不能有样本级重叠
-   - 判定标准：随机抽 10 条训练样本，≥ 7 条的任务形式与 benchmark 评测的任务形式可直接对应
-   - ❌ 不满足任务级对齐 → 不可用，继续搜索
-4. **Diversity check**: 已收集的训练数据是否来自 ≥ 2 个不同来源？分布是否有差异？（如一个偏正式指令、一个偏口语化）
-5. **Terminate**: 总样本量 ≥ 2000 AND 来源 ≥ 2 AND 全部通过相关性检查。若搜索耗尽仍未满足，报告用户讨论（可能需要自建或调整方法）。
+1. **Search**: Prioritize finding **established benchmarks** within the domain (frequently cited evaluation sets in related work). Search via `auto-research-s1-huggingface-query` and `auto-research-s1-modelscope-query`.
+2. **Download & Analyze**: Check format/scale/sample content/labels/dedup.
+3. **Decide**: ✅ Usable → Record; ❌ Not usable → Continue searching.
+4. **Self-built option**: If the research serves specific business needs, or fewer than 3 established benchmarks exist, **self-built benchmarks** are allowed:
+   - Explain self-build rationale (no public evaluation set for business scenario / existing benchmarks don't cover target capability)
+   - Define construction plan (data source, annotation spec, scale target)
+   - Record in `data_analysis.md` and mark as `category: benchmark (self-built)`
+   - Self-built benchmarks must also pass usability check (format loadable, samples ≥ 100)
+5. **Terminate**: ≥ 3 benchmarks confirmed (established + self-built mix allowed).
+
+#### Phase B: Training Data Selection (Based on selected benchmarks)
+
+> **Why constrain data volume and source count**: Single-source or small-scale training data causes model overfitting to training distribution, exhibiting strong ego and reward hacking behavior during evaluation (e.g., generating fixed templates, bypassing evaluation logic instead of genuinely solving the problem). Multi-source + sufficient volume is the basic prerequisite for mitigation.
+
+**Hard constraints**:
+- Training data **total samples ≥ 2000**
+- Training data **sources ≥ 2 different datasets** (prevent single-distribution overfitting)
+
+**Loop**:
+1. **Search**: Find training data **domain-relevant** to selected benchmarks.
+2. **Download & Analyze**: Same checks as Phase A + additional checks:
+   - Training pipeline format compatible (SFT needs instruction-response pairs, GRPO needs prompt-only, etc.)
+   - Per-dataset volume ≥ 500
+3. **Relevance check** (must pass, otherwise ❌ continue searching):
+   - **Task-level alignment**: Training data task type must be highly aligned with benchmark. E.g.:
+     - benchmark tests jailbreak attack → training data must contain attack prompt generation/rewriting tasks, not just general safety Q&A
+     - benchmark tests code generation → training data must contain code instruction-response pairs, not just natural language dialogue
+   - **Domain match**: Topic/domain consistent with benchmark (e.g., safety, medical, legal)
+   - **No data leakage**: No sample-level overlap between training and test sets
+   - Criteria: Randomly sample 10 training examples, ≥ 7 samples whose task form directly corresponds to the benchmark evaluation task
+   - ❌ Does not meet task-level alignment → Not usable, continue searching
+4. **Diversity check**: Whether collected training data comes from ≥ 2 different sources? Is there distribution diversity? (e.g., one formal instruction style, one colloquial)
+5. **Terminate**: Total samples ≥ 2000 AND sources ≥ 2 AND all pass relevance check. If search exhausted without meeting requirements, report to user for discussion (may need to self-build or adjust method).
 
 **`docs/data_analysis.md` format**:
 ```markdown
 ## {Dataset Name}
 - **Category**: benchmark / benchmark (self-built) / training
-- **Source**: {platform + ID / "self-built: 构建方案见下"}
+- **Source**: {platform + ID / "self-built: construction plan below"}
 - **Scale**: {N} samples
 - **Format**: {JSONL/CSV/...}, fields: {list}
 - **Sample preview**: {1-2 example inputs, truncated}
 - **Labels**: {description of annotations}
 - **Usability**: ✅ / ❌ {reason}
 - **Usage restriction**: test-only / training-allowed
-- **Relevance to benchmarks**: {与哪些 benchmark 领域相关，泄露检查结果}
+- **Relevance to benchmarks**: {which benchmarks are domain-relevant, leakage check results}
 - **Selected for**: {main eval / ablation / transfer test / SFT / GRPO / ...}
 ```
 
@@ -230,7 +230,7 @@ Search for open-source implementations of comparable methods:
 ### 3.4 Download & Verify
 
 Execute downloads for all pending items. Update status in `assets.md` / `baselines.md`.
-**Exit condition**: All models available (config models verified, additional models downloaded), ≥ 3 benchmarks + training data（总样本 ≥ 2000，来源 ≥ 2）pass usability check with analysis recorded in `data_analysis.md`, ≥ 2 baseline repos cloned or marked "no public repo".
+**Exit condition**: All models available (config models verified, additional models downloaded), ≥ 3 benchmarks + training data (total samples ≥ 2000, sources ≥ 2) pass usability check with analysis recorded in `data_analysis.md`, ≥ 2 baseline repos cloned or marked "no public repo".
 
 ## 4. Progress Tracking
 

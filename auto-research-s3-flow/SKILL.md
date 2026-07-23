@@ -11,24 +11,24 @@ metadata:
 
 ```mermaid
 flowchart TD
-    START([S2 结果确认]) --> ENTRY[Entry: 验证输入]
-    ENTRY --> FIG[3.1 绘图<br/>Fig.1 问题图 + Fig.2 方法图]
-    FIG --> TAB[3.2 表格<br/>主表 + 消融表]
-    TAB --> PLOT{有可绘制数据?}
-    PLOT -->|是| PLOTGEN[3.3 数据图<br/>曲线/热力图]
-    PLOT -->|否| WRITE
-    PLOTGEN --> WRITE[3.4 写作<br/>Intro→Related→Method→Exp→Concl→Abstract]
-    WRITE --> REVIEW[3.5 审稿循环<br/>≤ 3 轮]
+    START([S2 Results Confirmed]) --> ENTRY[Entry: Validate inputs]
+    ENTRY --> FIG[3.1 Figures<br/>Fig.1 Problem illustration + Fig.2 Method overview]
+    FIG --> TAB[3.2 Tables<br/>Main table + ablation table]
+    TAB --> PLOT{Plottable data available?}
+    PLOT -->|Yes| PLOTGEN[3.3 Data plots<br/>Curves / heatmaps]
+    PLOT -->|No| WRITE
+    PLOTGEN --> WRITE[3.4 Writing<br/>Intro→Related→Method→Exp→Concl→Abstract]
+    WRITE --> REVIEW[3.5 Review loop<br/>≤ 3 rounds]
     REVIEW --> CHECK{major=0<br/>AND score≥7?}
-    CHECK -->|是| GATE[3.6 用户审批]
-    CHECK -->|否, <3轮| REVISE[修改]
+    CHECK -->|Yes| GATE[3.6 User approval]
+    CHECK -->|No, <3 rounds| REVISE[Revise]
     REVISE --> REVIEW
-    CHECK -->| plateau / 3轮| GATE
-    REVIEW -->|缺实验| ROLLBACK([回滚 → S2 补实验])
+    CHECK -->|plateau / 3 rounds| GATE
+    REVIEW -->|Missing experiments| ROLLBACK([Rollback → S2 supplement experiments])
     ROLLBACK --> TAB
-    GATE -->|批准| FINAL[3.7 交付物归档]
-    GATE -->|驳回| REVIEW
-    FINAL --> DONE([完成])
+    GATE -->|Approve| FINAL[3.7 Finalize deliverables]
+    GATE -->|Reject| REVIEW
+    FINAL --> DONE([Complete])
 ```
 
 > **Skill invocation**: To invoke a sub-skill, read its `SKILL.md` file and follow the instructions within it. Skills are guidance documents, not executable commands.

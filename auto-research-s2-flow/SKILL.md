@@ -21,7 +21,12 @@ flowchart TD
     TEST --> ANALYZE[分析 & 反馈<br/>问题定位: 方法 or 超参?]
     ANALYZE --> CONV{连续 k 次无效<br/>OR 轮次 ≥ max?}
     CONV -->|否| RUN
-    CONV -->|是| ABL[2.5 消融实验]
+    CONV -->|是| CHECK{2.4.3 效果检查<br/>有提升? 达预期?}
+    CHECK -->|✅ 达预期| ABL[2.5 消融实验]
+    CHECK -->|⚠️ 低于预期| USER{用户决定}
+    USER -->|继续优化| RUN
+    USER -->|换 idea| ROLLBACK
+    CHECK -->|❌ 无提升| ROLLBACK
     ABL --> DOC[2.6 实验文档整理<br/>表格 + 结果 + checklist]
     DOC --> GATE{用户确认}
     GATE -->|确认| OUT([→ S3])
@@ -137,9 +142,21 @@ while consecutive_fail < k AND exp_iter < max_exp_iter:
 **Exit**: 收敛（连续 k 次无效）或达到 max_exp_iter。最优配置已记录。
 **Failure**: 方法根本不可行（所有尝试均无信号）→ **Rollback**。
 
+#### 2.4.3 效果检查门
+
+实验循环结束后，**必须**评估：
+1. **是否有提升**: 最优配置 vs 最强 baseline，在主要 benchmark 上是否有正向 delta？
+2. **是否达预期**: 提升幅度是否匹配 idea 的预期（参考 `topic_gap_idea.md` 中的 method sketch）？
+
+| 判定 | 后续 |
+|------|------|
+| ✅ 有提升且达预期 | → 进入 2.5 消融 |
+| ⚠️ 有提升但低于预期 | → 向用户报告，讨论：继续优化（回到 2.4.2 追加轮次）/ 降低预期继续 / 换 idea |
+| ❌ 无提升或退步 | → **不做消融**，触发 Rollback（换 idea 或回 S1） |
+
 ### 2.5 Ablation Experiments
 
-**Entry**: 2.4 收敛，最优配置确定。
+**Entry**: 2.4.3 检查通过（✅ 或 ⚠️ 用户确认继续）。
 **Action**:
 - 基于 `pre_review_checklist.md` 中的消融列表
 - 逐个移除/替换核心组件，在 benchmark 上测试

@@ -12,6 +12,22 @@ You are the top-level controller of a 3-stage research automation pipeline:
 - **S2 (Experimenting)**: idea → implementation → experiments → results
 - **S3 (Writing)**: results → paper draft
 
+```mermaid
+flowchart TD
+    START([用户启动]) --> INIT[Project Init<br/>校验 project_config.yaml]
+    INIT --> S1[S1: Deep Research<br/>文献搜索 → GAP → Idea]
+    S1 --> G1{用户选定 Idea?}
+    G1 -->|确认| S2[S2: Coding & Experimenting<br/>实现 → 实验 → 结果]
+    G1 -->|换方向| S1
+    S2 --> G2{结果充分?}
+    G2 -->|确认| S3[S3: Writing & Review<br/>写作 → 审稿 → 修改]
+    G2 -->|补实验| S2
+    S3 --> G3{审稿通过?}
+    G3 -->|通过| DONE([完成])
+    G3 -->|缺实验| S2
+    G3 -->|修改| S3
+```
+
 ## 1. Project Initialization
 
 ### 1.1 Check for project_config.yaml

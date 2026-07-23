@@ -5,135 +5,197 @@ metadata:
   version: "0.1"
 ---
 
-# Stage 2: Coding & Experimenting — Flow Control
+# S2 Flow: Coding & Experimenting
 
-## Goal
+**Stage goal**: From confirmed idea + prepared assets → produce reproducible experiment code (`src/`, `scripts/`, `exp/`), `docs/experiment_results.md`, `docs/pre_review_checklist.md`.
 
-From a confirmed research idea + prepared assets → produce:
-- Experiment repository with reproducible code (src/, scripts/, exp/)
-- `docs/experiment_results.md` with all key results
-- `docs/pre_review_checklist.md` with experiment matrix
+```mermaid
+flowchart TD
+    START([S1 Idea 确认]) --> V[Step 1: 资产验证<br/>模型/数据集/baseline]
+    V --> INFRA[Step 2: 评估基础设施<br/>eval.py + metrics]
+    INFRA --> DEPLOY[Step 3: 部署模型服务<br/>vLLM serve]
+    DEPLOY --> SANITY[Step 4: Sanity Check<br/>baseline ±2%]
+    SANITY --> PILOT[Step 5: Pilot 实验<br/>100-200 samples]
+    PILOT --> IMPL[Step 6-7: 实现<br/>baselines + core method]
+    IMPL --> CHECKLIST[Step 8: Pre-review Checklist<br/>实验矩阵]
+    CHECKLIST --> EXP[Step 9: 实验矩阵<br/>迭代执行]
+    EXP --> ANALYZE[Step 10: 分析<br/>充分性检查]
+    ANALYZE --> SUFF{结果充分?}
+    SUFF -->|否| EXP
+    SUFF -->|是| GATE{用户确认}
+    GATE -->|确认| OUT([→ S3])
+    GATE -->|补实验| EXP
+    PILOT -->|无信号| ROLLBACK([回滚: 换 idea / 回 S1])
+```
 
-## Sub-task Sequence
+> **Skill invocation**: To invoke a sub-skill, read its `SKILL.md` file and follow the instructions within it. Skills are guidance documents, not executable commands.
 
-Execute in order. After each step, update `docs/stage2_progress.md`.
+## Entry Condition
 
-### Step 0: Model Verification
+Verify ALL before starting. If any fails → report to user, do not proceed.
 
-Read `project_config.yaml` from the project root. For each model entry in the `models:` list:
+- [ ] `docs/topic_gap_idea.md` exists with user-confirmed idea selected
+- [ ] `docs/assets.md` exists (models + datasets with download commands)
+- [ ] `docs/baselines.md` exists (baseline methods with repos)
+- [ ] `project_config.yaml` exists at project root
 
-**Local models** (`type: local`):
-1. Check if the model exists at the specified `path` (look for `config.json` or `*.safetensors`)
-2. If missing: invoke `auto-research-s2-asset-download` to download the model to the specified path
-3. After download, verify the path now contains model files
+## Steps
 
-**API models** (`type: api`):
-1. Invoke `auto-research-s2-model-call` to send a test request (e.g., a simple "Hello" prompt with max_tokens=5)
-2. If the request fails: report the error and ask the user to check the URL/API key
-3. Do NOT proceed with experiments until all API models respond successfully
+### Step 1: Asset Verification & Download
 
-Only proceed to Step 1 after ALL models in the config are verified.
+**Entry**: Entry condition met.
+**Action**:
+- Read `project_config.yaml`. For each model in `models:`:
+  - Local (`type: local`): check `path` contains `config.json` / `*.safetensors`. If missing → invoke `auto-research-s2-asset-download`.
+  - API (`type: api`): invoke `auto-research-s2-model-call` with test prompt (max_tokens=5). If fails → report error, ask user to check URL/key.
+- Verify each dataset in `docs/assets.md` is loadable from `data/`.
+- Verify each baseline repo in `docs/baselines.md` is cloned and dependencies installable.
+- Update status columns in `assets.md` / `baselines.md`.
 
-### 1. Verify Assets Ready
+**Exit**: ALL items in `assets.md` and `baselines.md` marked verified.
+**Failure**: Block on any unverifiable item. Report to user with specific error.
 
-Check that required assets exist:
-- `data/` — datasets populated and loadable
-- `models/` — model weights downloaded (or remote API configured)
-- `baselines/` — baseline repos cloned with dependencies installable
-- `project_config.yaml` — user-provided URLs/keys present
+### Step 2: Build Eval Infrastructure
 
-If missing → invoke **auto-research-s2-asset-download**.
+**Entry**: All assets verified.
+**Action**: Invoke `auto-research-s2-eval-infrastructure` to create:
+- `scripts/eval.py` — unified evaluation entry point
+- Metric functions (ASR judge, keyword match, etc. — determined by idea type)
+- Result I/O format: JSON per-sample + aggregated markdown tables
 
-### 2. Build Eval Infrastructure
+**Exit**: `python scripts/eval.py --dummy` runs without error on synthetic data.
+**Failure**: Fix import/config issues before proceeding.
 
-Invoke **auto-research-s2-eval-infrastructure** to create:
-- `scripts/eval.py` — unified evaluation script
-- Metric functions (ASR judge, keyword match, etc.)
-- Result I/O format (JSON per-sample + aggregated)
+### Step 3: Deploy Model Servers
 
-### 3. Sanity Check: Reproduce Baseline
+**Entry**: Eval infrastructure working. Local models verified in Step 1.
+**Action**: For each local model requiring inference, invoke `auto-research-s2-vllm-deploy` to launch a vLLM server. Record endpoints in `project_config.yaml`.
+**Exit**: All servers respond to `GET /v1/models` with expected model ID.
+**Failure**: Check GPU memory, port conflicts. Retry or report.
 
-Run the primary baseline on a small subset (50–100 samples).
-Compare with reported paper numbers. Acceptable tolerance: **±2%**.
+### Step 4: Sanity Check — Reproduce Baseline
 
-- If within tolerance → proceed.
-- If outside → debug (data version, hyperparams, prompt format). Do NOT proceed until resolved.
+**Entry**: Servers up, eval script working.
+**Action**: Run the primary baseline (first entry in `baselines.md`) on 50–100 samples. Compare against the paper-reported number.
+**Exit**: Result within **±2%** of reported value.
+**Failure**: Debug (data version, prompt format, hyperparams, generation config). Re-run. Do NOT proceed until within tolerance.
 
-### 4. Pilot Experiment
+### Step 5: Pilot Experiment
 
-Run the proposed method on 100–200 samples through the full pipeline:
+**Entry**: Baseline sanity passed.
+**Action**: Run proposed method on 100–200 samples end-to-end:
 - Data loading → method execution → evaluation → result saving
+- If method requires training: train → save checkpoint → deploy checkpoint (Step 3 pattern) → eval. Each handoff must be explicit and verified.
+- **出题型 branch**: pilot is data construction pipeline (generate → filter → annotate subset) + run one baseline on constructed data.
 
-Goal: catch integration bugs before committing GPU-hours.
+**Exit**: Pipeline completes without crash. Initial signal visible (metric non-trivial, not random).
+**Failure**: Debug integration bugs (max 3 attempts). If still no signal → **Rollback** (see below).
 
-### 5. Implement Baselines
+### Step 6: Implement Baselines (Full)
 
-For each baseline method:
-- Wrap in `src/baselines/NAME.py` (OOP interface)
-- Create `exp/baseline_NAME.sh`
-- Verify it reproduces reported numbers
+**Entry**: Pilot passed.
+**Action**: For each baseline in `baselines.md`:
+- Wrap in `src/baselines/{name}.py` (OOP interface with `run()`)
+- Create `exp/baseline_{name}.sh`
+- Run on full dataset, verify reproduction within ±2%
+- Reference `auto-research-s2-model-call` for API patterns, `auto-research-s2-vllm-deploy` for serving
 
-Reference: **auto-research-s2-model-call** for API patterns, **auto-research-s2-model-training** for training loops. For local model serving, reference **auto-research-s2-vllm-deploy** to set up vLLM servers before calling models.
+**Exit**: All baseline results saved in `output/baselines/`. Reproduction verified.
+**Failure**: For any baseline that won't reproduce: document deviation, note in results as "our reimplementation".
 
-### 6. Implement Core Method
+### Step 7: Implement Core Method (Full)
 
-Implement the proposed method in `src/methods/`. Key requirements:
-- Clean OOP interface with `run()` method
-- Configurable via YAML or CLI args
+**Entry**: Baselines complete.
+**Action**: Implement proposed method in `src/methods/`:
+- Clean OOP interface, configurable via YAML/CLI
 - Logging at key steps
+- If training needed: full training run, checkpoint management, redeploy
+- Create `exp/method_{name}.sh`
+- **出题型 branch**: implement data construction pipeline in `src/data_construction/`, quality metrics in eval
 
-### 7. Generate Pre-review Checklist
+**Exit**: Method runs on full dataset without error. Results saved.
+**Failure**: Debug. If fundamental issue → Rollback.
 
-Create `docs/pre_review_checklist.md`:
+### Step 8: Generate Pre-review Checklist
+
+**Entry**: Core method produces results.
+**Action**: Create `docs/pre_review_checklist.md`:
 - Experiment matrix: method × dataset × metric
-- Mark experiments as **must-run** or **nice-to-have**
-- Ablation list: which components to remove/replace
-- Efficiency experiments: wall-clock time, GPU memory
+- Mark each cell **must-run** or **nice-to-have**
+- Ablation list: components to remove/replace
+- Efficiency experiments: wall-clock, GPU memory (if relevant)
+- **出题型**: add data quality/diversity metrics, human eval plan
 
-### 8. Run Experiments
+**Exit**: `docs/pre_review_checklist.md` exists with complete matrix.
 
-Invoke **auto-research-s2-experiment-runner** to execute the matrix.
+### Step 9: Run Experiment Matrix (ITERATIVE)
 
-### 9. Analyze Results
+**Entry**: Checklist generated.
+**Action**: This is a **loop**, not one-shot:
+1. Run all **must-run** experiments first (invoke `auto-research-s2-experiment-runner`)
+2. After each batch: invoke `auto-research-s2-result-analysis` for interim tables
+3. Assess: missing ablation? Weak result needs another seed? Nice-to-have now feasible?
+4. If yes → add to queue, continue loop
+5. If no → terminate loop
 
-Invoke **auto-research-s2-result-analysis** to produce:
-- Markdown tables (main results, ablation, efficiency)
-- Key findings as bullet points
-- Failure analysis section
+Log each experiment immediately after completion (see Progress Tracking).
 
-## Research Type Branch
+**Termination**: ALL must-run experiments have status SUCCESS.
+**Failure**: If an experiment fails 3× → mark BLOCKED, note in checklist, continue with others.
 
-| Type | 做题型 (Optimize on Benchmarks) | 出题型 (Create Benchmark) |
-|------|------|------|
-| Focus | Beat SOTA on existing datasets | Construct dataset + demonstrate gap |
-| Eval | Standard metrics vs baselines | Quality/diversity metrics + baseline performance |
-| Extra work | — | Data construction pipeline, annotation, release |
+### Step 10: Final Analysis & Sufficiency Check
 
-Detect type from the idea document. Adjust step 7 checklist accordingly.
+**Entry**: All must-run experiments complete.
+**Action**:
+- Invoke `auto-research-s2-result-analysis` for comprehensive tables (main, ablation, efficiency)
+- Write `docs/experiment_results.md`: tables + key findings + failure analysis
+- Sufficiency check: Do results support the paper claim? Missing comparisons? Statistical significance?
+- If insufficient → identify specific gap, add experiments, **loop back to Step 9**
+
+**Exit**: `docs/experiment_results.md` complete. Sufficiency assessed.
 
 ## Rollback Protocol
 
-- **Single idea fails** (pilot shows no signal after debugging): move to next idea in the idea pool. Log failure reason in `docs/stage2_progress.md`.
-- **All ideas in pool fail**: report back to auto-research orchestrator for Stage 1 rollback (re-generate ideas).
+- **Pilot fails (Step 5)**: Log failure reason. Try next idea from S1 idea pool → restart from Step 5.
+- **All ideas in pool fail**: Report to user. Rollback to S1 for new idea generation.
+- **Individual experiment fails (Step 9)**: Mark BLOCKED, do not rollback entire stage.
+- Always log rollback events in `docs/stage2_progress.md`.
 
-## Decision Gate
+## Phase State Machine
 
-After step 9, present to user:
-1. Summary table of main results
-2. Whether results are sufficient for a paper claim
-3. Gaps or weaknesses identified
+For resumption after interruption. Persist in `docs/stage2_progress.md`:
 
-Wait for user confirmation before marking Stage 2 complete.
+```
+asset_verify → infra_build → deploy → sanity → pilot → implementation → experiments → analysis → gate_pending → complete
+```
+
+On resume: read phase, jump to corresponding step. Steps are idempotent — safe to re-enter.
 
 ## Progress Tracking
 
-Maintain `docs/stage2_progress.md` with:
+Maintain `docs/stage2_progress.md`:
 ```markdown
-## Asset Checklist
-- [x] Dataset X downloaded
-- [ ] Model Y downloading...
+# Stage 2 Progress
+- **Idea**: {confirmed idea title}
+- **Phase**: asset_verify | infra_build | deploy | sanity | pilot | implementation | experiments | analysis | gate_pending | complete
+- **Ideas tried**: {N}/{pool size}
+- **Last updated**: {date}
 
-## Current Step: 4 (Pilot)
-## Blockers: none
-## Ideas Tried: 2/5
+## Experiment Log
+
+### {experiment_name}
+- Status: SUCCESS / FAILED / BLOCKED
+- Config: {key hyperparams}
+- Key metric: {value}
+- Decision: {why proceed / retry / skip}
 ```
+
+## Decision Gate (→ S3)
+
+After Step 10, present to user:
+1. Main results table (method vs baselines, all datasets)
+2. Ablation summary (which components matter)
+3. Sufficiency assessment: strengths + identified weaknesses
+4. Recommendation: **proceed to S3** / **run more experiments** (specify which)
+
+**Wait for user confirmation before marking Stage 2 complete.**

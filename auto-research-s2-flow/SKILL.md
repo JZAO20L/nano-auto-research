@@ -144,14 +144,32 @@ while consecutive_fail < k AND exp_iter < max_exp_iter:
 
 **Parameter defaults**: `k = 3` (3 consecutive ineffective optimizations = convergence), `max_exp_iter = 10`. User can override in `project_config.yaml`.
 
-**Per-iteration log** (written to `docs/stage2_progress.md`):
+**Per-iteration experiment log** (written to `docs/experiment_log.md`, one entry per iteration):
 ```markdown
-## Exp Iter {N}
-- Config: {key hyperparams}
-- Results: {metric per benchmark}
-- vs Baseline: {delta}
-- Diagnosis: {method issue / hyperparameter issue / data issue}
-- Decision: {adjustment direction / convergence stop}
+## Exp Iter {N} — {date}
+
+### Config
+- Key hyperparams: {list}
+- Changed from Iter {N-1}: {what changed and why}
+
+### Results
+| Benchmark | Metric | This iter | Best so far | Strongest baseline | Delta vs baseline |
+|-----------|--------|-----------|-------------|-------------------|-------------------|
+
+### Training Observations (if applicable)
+- Loss trend: {converging / plateau / diverging}
+- Notable behavior: {e.g., reward hacking, mode collapse, overfitting}
+
+### Analysis
+- What worked: {specific observations}
+- What didn't: {specific observations}
+- Root cause: {method design / hyperparameter / data quality / other}
+- Evidence: {cite specific numbers or samples}
+
+### Decision
+- Verdict: effective improvement / ineffective / regression
+- consecutive_fail: {N}/{k}
+- Next iteration plan: {specific adjustment, referencing exploration progression level}
 ```
 
 **Experiment script naming convention**:
@@ -231,7 +249,7 @@ On resume: read phase from `docs/stage2_progress.md`, jump to corresponding step
 
 ## Progress Tracking
 
-Maintain `docs/stage2_progress.md`:
+Maintain `docs/stage2_progress.md` (high-level status) + `docs/experiment_log.md` (detailed per-iteration log):
 ```markdown
 # Stage 2 Progress
 - **Idea**: {confirmed idea title}
@@ -239,7 +257,9 @@ Maintain `docs/stage2_progress.md`:
 - **Exp iterations**: {N}/{max_exp_iter}
 - **Consecutive fails**: {N}/{k}
 - **Best config**: {hyperparams}
+- **Best results**: {metric per benchmark}
 - **Ideas tried**: {N}/{pool size}
+- **Experiment log**: see docs/experiment_log.md
 - **Last updated**: {date}
 ```
 
